@@ -1,0 +1,211 @@
+Executon
+│
+│ • read company universe                     │
+│ • read settings                            │
+│ • read config                              │
+│ • read environment                         │
+│ • read command line arguments              │
+│ • read config file                         │
+│ • read environment variable                │
+│ • read command line argument               │
+│ • read config file                         │
+│ • read environment variable                │
+│ • read command line argument               │
+│ • read config file                         │
+│ • read environment variable                │
+│ • read command line argument               │
+│ • read config file                         │
+│ • read environment variable                │
+│ • read command line argument               │
+
+pipeline  .py script execution flow
+
+
+pipeline will be run with uv run python main.pg -- output <path>
+main.py
+↓ <- company_Universe.csv
+Collector/web.craller .py
+↓ Pull company_universe.csv and store data/raw/<SYMBOL>
+cleaner.py
+↓data/raw/<SYMBOL> then output to data/cleaned/<SYMBOL>
+↓
+Chunker.py
+↓
+Embedded.py
+↓
+normalizer.pg
+↓
+export.pg
+<--output< path>
+(IDK How it will feed it into a continuous LLM analyser)
+
+
+
+┌─────────────────────────────────────────────┐
+│ company_universe.csv                        │
+├─────────────────────────────────────────────┤
+│ Input File                                  │
+│                                             │
+│ Fields:                                     │
+│ • symbol                                    │
+│ • company_name                              │
+│ • exchange                                  │
+│ • isin                                      │
+│ • sector                                    │
+│ • industry                                  │
+│                                             │
+│ Example:                                    │
+│ RELIANCE                                    │
+│ TCS                                         │
+│ INFY                                        │
+└─────────────────────────────────────────────┘
+                      │
+                      ▼
+┌─────────────────────────────────────────────┐
+│ Read Symbols                                │
+├─────────────────────────────────────────────┤
+│ Functions:                                  │
+│ • open file                                 │
+│ • read rows                                 │
+│ • parse csv                                 │
+│ • extract symbols                           │
+│ • extract metadata                          │
+│ • remove empty symbols                      │
+│ • remove duplicate symbols                  │
+│ • create symbol list                        │
+│ • create batches                            │
+│                                             │
+│ Input:                                      │
+│ company_universe.csv                        │
+│                                             │
+│ Output:                                     │
+│ ["RELIANCE","TCS","INFY"]                   │
+└─────────────────────────────────────────────┘
+                      │
+                      ▼
+┌─────────────────────────────────────────────┐
+│ Batch API Requests                          │
+├─────────────────────────────────────────────┤
+│ Functions:                                  │
+│ • create request url                        │
+│ • create request parameters                 │
+│ • attach api key                            │
+│ • attach headers                            │
+│ • attach authentication                     │
+│ • split into batches                        │
+│ • send requests                             │
+│ • receive responses                         │
+│ • track response codes                      │
+│ • track request timing                      │
+│ • manage rate limits                        │
+│                                             │
+│ Input:                                      │
+│ ["RELIANCE","TCS","INFY"]                   │
+│                                             │
+│ Output:                                     │
+│ raw responses                               │
+└─────────────────────────────────────────────┘
+                      │
+                      ▼
+┌─────────────────────────────────────────────┐
+│ Handle Failures                             │
+├─────────────────────────────────────────────┤
+│ Functions:                                  │
+│ • catch exceptions                          │
+│ • catch timeout errors                      │
+│ • catch connection errors                   │
+│ • catch http errors                         │
+│ • catch api errors                          │
+│ • retry requests                            │
+│ • retry failed batches                      │
+│ • record failed symbols                     │
+│ • log failures                              │
+│ • skip invalid responses                    │
+│ • store failure information                 │
+│                                             │
+│ Input:                                      │
+│ successful + failed responses               │
+│                                             │
+│ Output:                                     │
+│ successful responses only                   │
+└─────────────────────────────────────────────┘
+                      │
+                      ▼
+┌─────────────────────────────────────────────┐
+│ Collect Results                             │
+├─────────────────────────────────────────────┤
+│ Functions:                                  │
+│ • parse json                                │
+│ • parse api response                        │
+│ • extract fields                            │
+│ • extract nested fields                     │
+│ • merge responses                           │
+│ • combine batches                           │
+│ • aggregate records                         │
+│ • track missing symbols                     │
+│ • track collected symbols                   │
+│ • build dataset                             │
+│                                             │
+│ Input:                                      │
+│ response 1                                  │
+│ response 2                                  │
+│ response 3                                  │
+│                                             │
+│ Output:                                     │
+│ combined raw dataset                        │
+└─────────────────────────────────────────────┘
+                      │
+                      ▼
+┌─────────────────────────────────────────────┐
+│ Clean / Normalize                           │
+├─────────────────────────────────────────────┤
+│ Functions:                                  │
+│ • rename columns                            │
+│ • standardize field names                   │
+│ • convert strings to numbers                │
+│ • convert strings to dates                  │
+│ • convert timestamps                        │
+│ • normalize symbols                         │
+│ • normalize exchange names                  │
+│ • normalize currencies                      │
+│ • handle null values                        │
+│ • handle missing values                     │
+│ • remove duplicates                         │
+│ • drop invalid rows                         │
+│ • validate required fields                  │
+│ • validate schema                           │
+│ • reorder columns                           │
+│ • create derived fields                     │
+│                                             │
+│ Input:                                      │
+│ raw dataset                                 │
+│                                             │
+│ Output:                                     │
+│ standardized dataset                        │
+└─────────────────────────────────────────────┘
+                      │
+                      ▼
+┌─────────────────────────────────────────────┐
+│ Export CSV / Parquet                        │
+├─────────────────────────────────────────────┤
+│ Functions:                                  │
+│ • create output path                        │
+│ • create filename                           │
+│ • create directories                        │
+│ • write csv                                 │
+│ • write parquet                             │
+│ • append output                             │
+│ • overwrite output                          │
+│ • compress output                           │
+│ • verify output file                        │
+│ • generate export metadata                  │
+│ • generate export summary                   │
+│                                             │
+│ Input:                                      │
+│ standardized dataset                        │
+│                                             │
+│ Output:                                     │
+│ output.csv                                  │
+│ or                                          │
+│ output.parquet                              │
+└─────────────────────────────────────────────┘

@@ -1,0 +1,8 @@
+.env
+data/raw/
+data/cleaned/
+data/chunked/
+data/exports/
+__pycache__/
+*.pyc
+.venv/

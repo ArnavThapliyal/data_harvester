@@ -1,0 +1,33 @@
+main.py — not populated
+main_pipeline.py — populated
+config/settings.py — populated
+scripts/build_universe.py — populated
+scripts/url_discovery.py — populated
+storage/raw_store.py — populated
+Retrieval/registry.py — populated
+Retrieval/transcript_collector.py — not populated
+Retrieval/Document/company_crawler.py — populated
+Retrieval/Numeric/__init__.py — not populated
+Retrieval/Numeric/base_numeric_collector.py — populated
+Retrieval/Numeric/indiaapi_collector.py — populated
+Retrieval/Numeric/yfinance_collector.py — populated
+Retrieval/Numeric/nse_collector.py — populated
+Retrieval/Numeric/bse_collector.py — populated
+Retrieval/Numeric/bsc_collector.py — populated
+Retrieval/Numeric/screener_collector.py — populated
+pipeline/__init__.py — not populated
+pipeline/cleaner.py — not populated
+pipeline/chunker.py — not populated
+pipeline/embedder.py — not populated
+pipeline/normalizer.py — not populated
+pipeline/exporter.py — not populated
+pipeline/pipeline.py — populated
+pipeline/utils.py — not populated
+pipeline/collectors.py — populated
+pipeline/documents.py — populated
+pipeline/storage.py — populated
+tests/test_yfinance_api_.py — populated
+tests/test_all_collectors.py — populated
+tests/test_bsc_collector.py — populated
+tests/test_step6_bsc_collector.py — populated
+tests/test_step5_registry.py — populated

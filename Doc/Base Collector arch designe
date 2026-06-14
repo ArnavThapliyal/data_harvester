@@ -1,0 +1,92 @@
+Authentication - each collector has a different way to auth
+URL Construction - same stock each collector builds url differently
+Response Format - different per provider
+Symbol Mapping - Completed it is in @company_universe.csv with ticket,isin,bsc_code,name,industry,series,market_cap_category, and index.
+Normalization - one internal system format
+Persistence - into csv
+Scheduling - How often?
+Validation chcek for if valuses are in negative
+Monitoring: How many requests, failures? Last successful run? and API downtime?
+
+BaseCollector Responsibilities
+
+Shared:
+✓ Run pipeline
+✓ Read company universe
+✓ Batch management
+✓ Retry logic
+✓ Failure handling
+✓ Dataset assembly
+✓ Export logic
+
+Child collectors provide:
+✓ API endpoint details
+✓ Request construction
+✓ Response parsing
+✓ Normalization mapping
+
+Required Attributes of child collectorswill define
+SOURCE_NAME
+BASE_URL
+BATCH_SIZE
+MAX_RETRIES
+OUTPUT_COLUMNS
+
+Required Abstract Methods
+build_request()
+fetch_batch()
+parse_response()
+normalize_record()
+
+Shared Concrete Methods
+read_symbols()
+create_batches()
+execute_batch()
+retry_request()
+handle_failure()
+collect_results()
+clean_dataset()
+normalize_dataset()
+export_csv()
+export_parquet()
+
+BaseCollector
+│
+├── run()
+├── read_symbols()
+├── create_batches()
+├── execute_batch()
+├── retry_request()
+├── handle_failure()
+├── collect_results()
+├── normalize_dataset()
+├── clean_dataset()
+├── export_csv()
+├── export_parquet()
+│
+├── build_request()      [abstract]
+├── fetch_batch()        [abstract]
+├── parse_response()     [abstract]
+└── normalize_record()   [abstract]
+
+Then a new collector can be as small as:
+
+class NSECollector(BaseCollector):
+
+    def build_request(self, batch):
+        ...
+
+    def fetch_batch(self, request):
+        ...
+
+    def parse_response(self, response):
+        ...
+
+    def normalize_record(self, record):
+        ...
+
+
+
+
+
+

@@ -1,0 +1,56 @@
+=== PIPELINE ENTRYPOINT ===
+./main.py
+
+=== EXECUTION ORDER ===
+1. ./main.py
+2. ./Retrieval/registry.py
+3. ./Retrieval/Numeric/yfinance_collector.py
+4. ./Retrieval/Numeric/nse_collector.py
+5. ./Retrieval/Numeric/bsc_collector.py
+6. ./Retrieval/Numeric/screener_collector.py
+7. ./Retrieval/Numeric/base_numeric_collector.py
+8. ./pipeline/collectors.py
+9. ./converter/file_extractor.py
+10. ./converter/numeric_flattener.py
+11. ./pipeline/cleaner.py
+12. ./pipeline/chunker.py
+13. ./pipeline/normalizer.py
+
+=== CALL CHAIN ===
+./main.py
+  -> ./Retrieval/registry.py
+  -> ./pipeline/collectors.py
+./Retrieval/registry.py
+  -> ./Retrieval/Numeric/yfinance_collector.py
+  -> ./Retrieval/Numeric/nse_collector.py
+  -> ./Retrieval/Numeric/bsc_collector.py
+  -> ./Retrieval/Numeric/screener_collector.py
+./Retrieval/Numeric/yfinance_collector.py
+  -> ./Retrieval/Numeric/base_numeric_collector.py
+./Retrieval/Numeric/nse_collector.py
+  -> ./Retrieval/Numeric/base_numeric_collector.py
+./Retrieval/Numeric/bsc_collector.py
+  -> ./Retrieval/Numeric/base_numeric_collector.py
+./Retrieval/Numeric/screener_collector.py
+  -> ./Retrieval/Numeric/base_numeric_collector.py
+./pipeline/collectors.py
+./converter/file_extractor.py
+./converter/numeric_flattener.py
+./pipeline/cleaner.py
+./pipeline/chunker.py
+./pipeline/normalizer.py
+
+=== IMPORT GRAPH ===
+main.py -> Retrieval.registry
+Retrieval.registry -> Retrieval.Numeric.yfinance_collector
+Retrieval.registry -> Retrieval.Numeric.nse_collector
+Retrieval.registry -> Retrieval.Numeric.bsc_collector
+Retrieval.registry -> Retrieval.Numeric.screener_collector
+Retrieval.Numeric.yfinance_collector -> Retrieval.Numeric.base_numeric_collector
+Retrieval.Numeric.nse_collector -> Retrieval.Numeric.base_numeric_collector
+Retrieval.Numeric.bsc_collector -> Retrieval.Numeric.base_numeric_collector
+Retrieval.Numeric.screener_collector -> Retrieval.Numeric.base_numeric_collector
+
+=== NOTE ===
+This is a dry-run simulation based on import paths. In an actual execution, the pipeline would proceed based on command-line arguments.
+For this dry run, we're only showing the possible imports that would occur when running the pipeline in its default `python main.py` mode.

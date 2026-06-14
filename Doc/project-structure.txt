@@ -1,0 +1,104 @@
+.
+├── .DS_Store
+├── .env
+├── .gitignore
+├── .python-version
+├── .ruff_cache
+│   ├── .gitignore
+│   ├── 0.15.15
+│   │   ├── 1115956416103510493
+│   │   ├── 11519482751172142453
+│   │   ├── 1495691341948507118
+│   │   ├── 15236192633510485869
+│   │   ├── 2809088425588444286
+│   │   └── 7432333973196385277
+│   └── CACHEDIR.TAG
+├── Doc
+│   ├── Base Collector arch designe
+│   ├── cursor_prompt_base_collector.md
+│   ├── pipeline arch
+│   ├── pipeline_implementation_guide.md
+│   └── populated
+├── README.md
+├── Retrieval
+│   ├── .DS_Store
+│   ├── Document
+│   │   ├── company_crawler.py
+│   │   └── document_crawler.py
+│   ├── Numeric
+│   │   ├── __init__.py
+│   │   ├── base_numeric_collector.py
+│   │   ├── bsc_collector.py
+│   │   ├── bse_collector.py
+│   │   ├── indiaapi_collector.py
+│   │   ├── nse_collector.py
+│   │   ├── screener_collector.py
+│   │   └── yfinance_collector.py
+│   ├── registry.py
+│   └── transcript_collector.py
+├── config
+│   ├── company_universe.csv
+│   ├── company_universe.yaml
+│   ├── company_urls.json
+│   ├── settings.py
+│   └── sources
+│       ├── ind_NiftyMidSmallcap4005050_list.csv
+│       ├── ind_niftymidcapselect_list (1).csv
+│       └── ind_niftysmallcap50list.csv
+├── converter
+│   ├── __init__.py
+│   ├── file_extractor.py
+│   └── numeric_flattener.py
+├── data
+│   ├── .DS_Store
+│   ├── chunked
+│   ├── cleaned
+│   │   ├── documents
+│   │   └── numeric
+│   ├── done
+│   ├── exports
+│   ├── raw
+│   │   ├── 360ONE.json
+│   │   ├── 3MINDIA.json
+│   │   ├── bse
+│   │   ├── documents
+│   │   │   └── other
+│   │   ├── manifest.json
+│   │   ├── nse
+│   │   ├── numeric
+│   │   └── test.txt
+│   └── transient
+│       ├── documents
+│       └── numeric
+├── main.py
+├── main_pipeline.py
+├── pipeline
+│   ├── __init__.py
+│   ├── chunker.py
+│   ├── cleaner.py
+│   ├── collectors.py
+│   ├── documents.py
+│   ├── embedder.py
+│   ├── exporter.py
+│   ├── normalizer.py
+│   ├── pipeline.py
+│   ├── storage.py
+│   └── utils.py
+├── project-structure.txt
+├── pyproject.toml
+├── scripts
+│   ├── build_universe.py
+│   └── url_discovery.py
+├── storage
+│   └── raw_store.py
+├── test_document_crawler.py
+├── test_import.py
+├── tests
+│   ├── test_all_collectors.py
+│   ├── test_bsc_collector.py
+│   ├── test_step5_registry.py
+│   ├── test_step6_bsc_collector.py
+│   └── test_yfinance_api_.py
+└── uv.lock
+
+30 directories, 72 files
