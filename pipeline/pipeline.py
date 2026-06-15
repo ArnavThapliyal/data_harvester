@@ -4,10 +4,11 @@ import argparse
 import logging
 from pathlib import Path
 from typing import List, Dict, Any
-from .collectors import BaseCollector, NumericCollector, DocumentCollector
-from .documents import CollectedDocument
-from .storage import StorageProvider
-from Retrieval.registry import get_numeric_collector, get_document_collector
+
+# from .collectors import BaseCollector, NumericCollector, DocumentCollector
+# from .documents import CollectedDocument
+# from .storage import StorageProvider
+from Retrieval.registry import get_collector
 from Retrieval.Document.document_crawler import process_symbol_urls
 from pipeline.cleaner import Cleaner
 from pipeline.chunker import Chunker
@@ -18,6 +19,7 @@ from pipeline.utils import get_available_symbols
 from pipeline.documents import CollectedDocument
 from pipeline.converter import FileExtractor
 
+# to data/
 
 logger = logging.getLogger(__name__)
 
