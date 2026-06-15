@@ -12,11 +12,12 @@ from Retrieval.Document.document_crawler import process_symbol_urls
 from pipeline.cleaner import Cleaner
 from pipeline.chunker import Chunker
 from pipeline.normalizer import Normalizer
-from pipeline.exporter import Exporter
-from pipeline.storage import Storage
+from pipeline.storage import StorageProvider
 from pipeline.utils import get_available_symbols
-from pipeline.collectors import get_collectors
-from pipeline.documents import get_documents
+# from pipeline.collectors import get_collectors # /data_harvester/Retrieval/Numeric/registry.py i think this is what we need to use
+from pipeline.documents import CollectedDocument
+from pipeline.converter import FileExtractor
+
 
 logger = logging.getLogger(__name__)
 

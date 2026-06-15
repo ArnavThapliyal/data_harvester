@@ -221,8 +221,8 @@ def run_document_stage(symbol: str) -> None:
 
 def run_convert_stage(symbol: str) -> None:
     """Run convert stage which includes numeric flattening and file extraction."""
-    from converter.numeric_flattener import flatten
-    from converter.file_extractor import FileExtractor
+    from pipeline.converter import flatten
+    from pipeline.converter import FileExtractor
     
     try:
         # Run numeric flattener 
