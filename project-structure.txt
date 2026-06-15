@@ -1,3 +1,4 @@
+# % tree -a -I '.git|.venv|__pycache__|node_modules|dist|build' > project-structure.txt
 .
 ├── .DS_Store
 ├── .env
@@ -15,10 +16,15 @@
 │   └── CACHEDIR.TAG
 ├── Doc
 │   ├── Base Collector arch designe
+│   ├── collector_validation_report.txt
 │   ├── cursor_prompt_base_collector.md
+│   ├── final_validation_report.txt
 │   ├── pipeline arch
+│   ├── pipeline_e2e_report.txt
+│   ├── pipeline_execution_trace.txt
 │   ├── pipeline_implementation_guide.md
-│   └── populated
+│   ├── populated
+│   └── startup_validation_report.txt
 ├── README.md
 ├── Retrieval
 │   ├── .DS_Store
@@ -55,21 +61,18 @@
 │   ├── cleaned
 │   │   ├── documents
 │   │   └── numeric
-│   ├── done
 │   ├── exports
-│   ├── raw
-│   │   ├── 360ONE.json
-│   │   ├── 3MINDIA.json
-│   │   ├── bse
-│   │   ├── documents
-│   │   │   └── other
-│   │   ├── manifest.json
-│   │   ├── nse
-│   │   ├── numeric
-│   │   └── test.txt
-│   └── transient
+│   └── raw
+│       ├── 360ONE.json
+│       ├── 3MINDIA.json
+│       ├── bse
 │       ├── documents
-│       └── numeric
+│       │   └── other
+│       ├── manifest.json
+│       ├── nse
+│       ├── numeric
+│       └── test.txt
+├── live_smoke_test_plan.txt
 ├── main.py
 ├── main_pipeline.py
 ├── pipeline
@@ -80,25 +83,34 @@
 │   ├── documents.py
 │   ├── embedder.py
 │   ├── exporter.py
+│   ├── firecracker_runner.py
 │   ├── normalizer.py
 │   ├── pipeline.py
 │   ├── storage.py
 │   └── utils.py
 ├── project-structure.txt
 ├── pyproject.toml
+├── sandbox
+│   ├── README.md
+│   ├── file_bridge.py
+│   ├── firecracker_runner.py
+│   └── scanner.py
 ├── scripts
 │   ├── build_universe.py
 │   └── url_discovery.py
 ├── storage
 │   └── raw_store.py
-├── test_document_crawler.py
-├── test_import.py
 ├── tests
+│   ├── dry_run_trace.py
 │   ├── test_all_collectors.py
 │   ├── test_bsc_collector.py
+│   ├── test_collectors.py
+│   ├── test_document_crawler.py
+│   ├── test_import.py
 │   ├── test_step5_registry.py
 │   ├── test_step6_bsc_collector.py
 │   └── test_yfinance_api_.py
-└── uv.lock
+├── uv.lock
+└── validate_startup.py
 
-30 directories, 72 files
+27 directories, 86 files

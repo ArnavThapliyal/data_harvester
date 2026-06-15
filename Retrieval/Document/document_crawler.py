@@ -1,5 +1,6 @@
 """
-Document crawler for downloading files from company URLs using fallback approach.
+Unified document crawler for downloading files from company URLs using fallback approach.
+This implementation combines the best practices from company_crawler and document_crawler.
 """
 
 import argparse
@@ -9,11 +10,13 @@ import os
 import time
 from datetime import UTC, datetime
 from pathlib import Path
-from typing import List, Optional 
+from typing import List, Optional, Dict, Any 
 from urllib.parse import urlparse
 
 import httpx
 from bs4 import BeautifulSoup
+from crawl4ai import Crawl4AI
+from crawl4ai.web_crawler import WebCrawler
 
 # Import config settings to know where to put files
 from config.settings import (
@@ -140,7 +143,7 @@ def extract_links_with_beautifulsoup(content: str, base_url: str) -> List[str]:
                 continue
                 
         links.append(absolute_url)
-                
+        
     return links
 
 
@@ -190,7 +193,7 @@ def create_manifest(symbol: str, source_urls: List[str], crawler_used: str, link
     return manifest
 
 
-def process_symbol_urls(symbol: str, urls: List[str], overwrite: bool = False) -> None:
+def process_single_company(symbol: str, urls: List[str], overwrite: bool = False) -> None:
     """Process all URLs for a single symbol."""
     logger.info(f"Processing {len(urls)} URLs for symbol {symbol}")
     
@@ -295,6 +298,166 @@ def process_symbol_urls(symbol: str, urls: List[str], overwrite: bool = False) -
         logger.warning(f"No files downloaded for symbol {symbol}")
 
 
+class UnifiedDocumentCrawler:
+    """Unified document crawler combining best features of both original crawler implementations."""
+    
+    def __init__(self, output_dir: Optional[Path] = None):
+        self.output_dir = output_dir or RAW_DOCUMENTS_OTHER
+        self.logger = logging.getLogger(self.__class__.__name__)
+        self.crawler = Crawl4AI()
+        
+        # Create output directory
+        self.output_dir.mkdir(parents=True, exist_ok=True)
+        
+    def load_company_list(self) -> List[Dict[str, str]]:
+        """Load the company universe list from CSV."""
+        from config.settings import COMPANY_UNIVERSE_CSV
+        
+        companies = []
+        try:
+            import csv
+            with COMPANY_UNIVERSE_CSV.open(newline='', encoding='utf-8') as handle:
+                reader = csv.DictReader(handle)
+                for row in reader:
+                    if row.get('symbol'):  # Only include entries with symbols
+                        companies.append({
+                            'symbol': row['symbol'].strip(),
+                            'company_name': row.get('company_name', '').strip(),
+                            'exchange': row.get('exchange', '').strip()
+                        })
+        except Exception as e:
+            self.logger.error(f"Failed to load company list: {e}")
+            
+        return companies
+        
+    def find_ir_site(self, company_name: str) -> Optional[str]:
+        """Find the investor relations website for a company. Placeholder implementation."""
+        # This would be enhanced in real implementation with proper search methods
+        # For now returns None to trigger fallback
+        self.logger.debug(f"Searching for IR site for {company_name}")
+        return None  # Placeholder
+        
+    def crawl_site(self, url: str) -> Optional[Dict[str, Any]]:
+        """Crawl a website and extract relevant information using Crawl4AI."""
+        try:
+            # Using Crawl4AI to crawl the site - this provides better content extraction
+            result = self.crawler.web_crawler(
+                url=url,
+                word_count_threshold=100,
+                extract_links=True,
+                include_html=False,
+                chunk_size=2000
+            )
+            
+            if result.success:
+                return {
+                    'url': url,
+                    'title': result.title,
+                    'content': result.markdown,
+                    'links': result.extracted_links,
+                    'crawl_time': datetime.utcnow().isoformat() + "+00:00"
+                }
+            else:
+                self.logger.warning(f"Crawl failed for {url}: {result.error}")
+                return None
+                
+        except Exception as e:
+            self.logger.error(f"Error crawling site {url}: {e}")
+            return None
+            
+    def extract_document_links(self, content: str, url: str) -> List[str]:
+        """Extract document links from crawled content."""
+        try:
+            soup = BeautifulSoup(content, 'html.parser')
+            
+            # Find all links that point to documents
+            doc_links = []
+            for link in soup.find_all('a', href=True):
+                href = link['href']
+                if any(ext in href.lower() for ext in ['.pdf', '.doc', '.xls', '.xlsx', '.docx']):
+                    # Convert relative URLs to absolute
+                    if not href.startswith('http'):
+                        from urllib.parse import urljoin
+                        href = urljoin(url, href)
+                    doc_links.append(href)
+            
+            return doc_links
+            
+        except Exception as e:
+            self.logger.error(f"Error extracting document links: {e}")
+            return []
+            
+    def download_documents(self, doc_urls: List[str]) -> List[Dict[str, Any]]:
+        """Download and store documents."""
+        downloaded = []
+        
+        for url in doc_urls:
+            try:
+                response = httpx.get(url, timeout=30)
+                response.raise_for_status()
+                
+                # Create filename based on URL
+                filename = os.path.basename(url)
+                if not filename or '.' not in filename:
+                    filename = f"document_{int(time.time())}.pdf"
+                
+                filepath = self.output_dir / f"{filename}"
+                
+                with open(filepath, 'wb') as f:
+                    f.write(response.content)
+                
+                downloaded.append({
+                    'url': url,
+                    'path': str(filepath),
+                    'size': len(response.content),
+                    'download_time': datetime.utcnow().isoformat() + "+00:00"
+                })
+                
+            except Exception as e:
+                self.logger.error(f"Error downloading {url}: {e}")
+                continue
+                
+        return downloaded
+        
+    def save_metadata(self, company_data: Dict[str, Any]) -> None:
+        """Save crawler metadata for the company."""
+        try:
+            # Create filename based on company name
+            filename = f"{company_data['symbol']}_crawl_metadata.json"
+            filepath = self.output_dir / filename
+            
+            with open(filepath, 'w', encoding='utf-8') as f:
+                json.dump(company_data, f, indent=2, ensure_ascii=False)
+                
+        except Exception as e:
+            self.logger.error(f"Error saving metadata: {e}")
+            
+    def crawl_companies(self) -> None:
+        """Main method to crawl all companies in universe."""
+        try:
+            # Read company urls from file
+            with open(COMPANY_URLS_JSON, 'r') as f:
+                company_urls = json.load(f)
+        except Exception as e:
+            self.logger.error(f"Failed to read company URLs file: {e}")
+            return
+            
+        # Process each symbol in the URL list
+        symbols = list(company_urls.keys())
+        for symbol in symbols[:5]:  # Limit for demo purposes
+            urls = company_urls.get(symbol, [])
+            if not urls:
+                self.logger.warning(f"No URLs found for symbol {symbol}")
+                continue
+                
+            self.logger.info(f"Crawling data for symbol: {symbol}")
+            process_single_company(symbol, urls)
+    
+    def process_symbol_urls(self, symbol: str, urls: List[str], overwrite: bool = False):
+        """Process individual symbol - wrapper around the standalone function."""
+        process_single_company(symbol, urls, overwrite)
+
+
 def main():
     """Main entry point for document crawler."""
     parser = argparse.ArgumentParser(description="Download documents from company URLs")
@@ -323,7 +486,7 @@ def main():
     # Process each symbol
     for symbol, urls in company_urls.items():
         logger.info(f"Starting processing for symbol: {symbol}")
-        process_symbol_urls(symbol, urls, overwrite=args.overwrite)
+        process_single_company(symbol, urls, overwrite=args.overwrite)
 
 
 if __name__ == "__main__":

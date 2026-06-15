@@ -10,6 +10,11 @@ import time
 from pathlib import Path
 from datetime import datetime, timedelta
 from typing import List, Optional
+from scripts.url_discovery import generate_constant_urls
+from scripts.build_universe import build_universe
+from pipeline.pipeline import PipelineRunner
+from tests import dry_run_trace
+from config.settings import COMPANY_UNIVERSE_CSV
 
 # Add project root to path so imports work properly
 sys.path.insert(0, str(Path(__file__).parent))
@@ -34,53 +39,53 @@ logger.addHandler(stdout_handler)
 logger.setLevel(logging.INFO)
 
 
-def _run_document_stage_sandboxed(symbol: str, overwrite: bool) -> None:
-    """Run document crawler for a symbol using Firecracker sandbox."""
-    # This is a placeholder function that would contain actual sandboxed execution logic
+# def _run_document_stage_sandboxed(symbol: str, overwrite: bool) -> None:
+#     """Run document crawler for a symbol using Firecracker sandbox."""
+#     # This is a placeholder function that would contain actual sandboxed execution logic
     
-    # In a complete implementation, this would:
-    # 1. Use FirecrackerRunner to execute the document collection in VM
-    # 2. Use FileBridge to transfer results from VM output disk to host
-    # 3. Run virus scanning on transferred files
+#     # In a complete implementation, this would:
+#     # 1. Use FirecrackerRunner to execute the document collection in VM
+#     # 2. Use FileBridge to transfer results from VM output disk to host
+#     # 3. Run virus scanning on transferred files
     
-    try:
-        logger.info(f"Running sandboxed document crawler for {symbol}")
+#     try:
+#         logger.info(f"Running sandboxed document crawler for {symbol}")
         
-        # This is where you would actually implement the complete sandboxed workflow
-        # For now, simulate it with a placeholder
+#         # This is where you would actually implement the complete sandboxed workflow
+#         # For now, simulate it with a placeholder
         
-        logger.info(f"Completed sandboxed document crawler for {symbol}")
+#         logger.info(f"Completed sandboxed document crawler for {symbol}")
         
-    except Exception as e:
-        logger.warning(f"Warning: Failed to run sandboxed document crawler for {symbol}: {str(e)}")
+#     except Exception as e:
+#         logger.warning(f"Warning: Failed to run sandboxed document crawler for {symbol}: {str(e)}")
 
 
-def _run_normalize_stage_sandboxed(symbol: str, overwrite: bool) -> None:
-    """Run normalize stage for a symbol using Firecracker sandbox."""
-    # This is a placeholder function that would contain actual sandboxed execution logic
+# def _run_normalize_stage_sandboxed(symbol: str, overwrite: bool) -> None:
+#     """Run normalize stage for a symbol using Firecracker sandbox."""
+#     # This is a placeholder function that would contain actual sandboxed execution logic
     
-    # In a complete implementation, this would:
-    # 1. Use FirecrackerRunner to execute normalization in VM  
-    # 2. Use FileBridge to transfer results from VM output disk to host
-    # 3. Run virus scanning on transferred files
+#     # In a complete implementation, this would:
+#     # 1. Use FirecrackerRunner to execute normalization in VM  
+#     # 2. Use FileBridge to transfer results from VM output disk to host
+#     # 3. Run virus scanning on transferred files
     
-    try:
-        logger.info(f"Running sandboxed normalize stage for {symbol}")
+#     try:
+#         logger.info(f"Running sandboxed normalize stage for {symbol}")
         
-        # This is where you would actually implement the complete sandboxed workflow
-        # For now, simulate it with a placeholder
+#         # This is where you would actually implement the complete sandboxed workflow
+#         # For now, simulate it with a placeholder
         
-        logger.info(f"Completed sandboxed normalize stage for {symbol}")
+#         logger.info(f"Completed sandboxed normalize stage for {symbol}")
         
-    except Exception as e:
-        logger.warning(f"Warning: Failed to run sandboxed normalize stage for {symbol}: {str(e)}")
+#     except Exception as e:
+#         logger.warning(f"Warning: Failed to run sandboxed normalize stage for {symbol}: {str(e)}")
         
-        # Check if we should loop
-        if not loop:
-            break
+#         # Check if we should loop
+#         if not loop:
+#             break
             
-        logger.info(f"Sleeping for {loop_interval_hours} hours before next run")
-        time.sleep(loop_interval_hours * 3600)  # Convert hours to seconds
+#         logger.info(f"Sleeping for {loop_interval_hours} hours before next run")
+#         time.sleep(loop_interval_hours * 3600)  # Convert hours to seconds
 
 
 def get_available_symbols() -> List[str]:
@@ -97,8 +102,8 @@ def get_available_symbols() -> List[str]:
         # Handle different column names - use the ticker field which should be consistent
         if 'ticker' in df.columns:
             return df['ticker'].dropna().tolist()
-        elif 'Syobol' in df.columns:
-            return df['Syobol'].dropna().tolist() 
+        elif 'Symbol' in df.columns:
+            return df['Symbol'].dropna().tolist() 
         else:
             # If no standard column names found, return first column
             return df.iloc[:, 0].dropna().tolist()
@@ -329,7 +334,7 @@ def main() -> None:
     args = parse_args()
     
     try:
-        run_pipeline(
+        run_harvester_pipeline(
             symbols=args.symbols,
             stages=args.stages,
             overwrite=args.overwrite,
@@ -349,3 +354,4 @@ def main() -> None:
 
 if __name__ == "__main__":
     main()
+
