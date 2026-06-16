@@ -11,11 +11,11 @@ from pathlib import Path
 from datetime import datetime, timedelta
 from typing import List, Optional
 
-from scripts.url_discovery import generate_constant_urls
+from scripts.url_discovery import generate_constant_urls, main as url_discovery_main
 from scripts.build_universe import build_universe
 from pipeline.pipeline import PipelineRunner
 from tests import dry_run_trace
-from config.settings import COMPANY_UNIVERSE_CSV
+from config.settings import COMPANY_UNIVERSE_CSV, COMPANY_URLS_JSON, DONE
 
 # Add project root to path so imports work properly
 sys.path.insert(0, str(Path(__file__).parent))
@@ -51,18 +51,210 @@ def get_available_symbols() -> List[str]:
             return ['RELIANCE', 'TCS', 'HDFCBANK']  # Default fallback
             
         df = pd.read_csv(universe_file)
-        # Handle different column names - use the ticker field which should be consistent
+        # Handle different column names - look for ticker or Symbol
         if 'ticker' in df.columns:
             return df['ticker'].dropna().tolist()
         elif 'Symbol' in df.columns:
             return df['Symbol'].dropna().tolist() 
         else:
-            # If no standard column names found, return first column
+            # If no standard column names found, try to get first column
             return df.iloc[:, 0].dropna().tolist()
             
     except Exception as e:
         logger.error(f"Error reading universe file: {str(e)}")
         return ['RELIANCE', 'TCS', 'HDFCBANK']  # Default fallback
+
+
+def get_company_universe() -> List[str]:
+    """Get complete company universe from CSV."""
+    try:
+        import pandas as pd
+        df = pd.read_csv(COMPANY_UNIVERSE_CSV)
+        
+        if 'Symbol' in df.columns:
+            return [symbol.strip() for symbol in df['Symbol'] if symbol and str(symbol).strip()]
+        elif 'ticker' in df.columns:
+            return [symbol.strip() for symbol in df['ticker'] if symbol and str(symbol).strip()]
+        else:
+            # Return first column as a fallback
+            return [str(row).strip() for row in df.iloc[:, 0] if str(row).strip()]
+            
+    except Exception as e:
+        logger.error(f"Error reading universe CSV: {str(e)}")
+        return []
+
+
+def check_url_discovery_completed() -> bool:
+    """Check if we can skip URL discovery by looking at existing company_urls.json."""
+    # If company_urls.json doesn't exist, we need to run discovery
+    if not COMPANY_URLS_JSON.exists():
+        return False
+    
+    try:
+        import json
+        with open(COMPANY_URLS_JSON, 'r') as f:
+            urls_data = json.load(f)
+            
+        # Get universe symbols
+        universe_symbols = set(get_company_universe())
+        
+        # Check how many are already in the URL discovery data
+        discovered_symbols = set(urls_data.keys())
+        
+        # If we have all companies discovered, skip further discovery
+        return discovered_symbols >= universe_symbols
+        
+    except Exception as e:
+        logger.warning(f"Error checking URL discovery status: {str(e)}")
+        return False
+
+
+def run_url_discovery() -> None:
+    """Run the URL discovery process."""
+    logger.info("Starting URL discovery process...")
+    
+    # Import and run url_discovery module directly
+    try:
+        # Run with arguments to set limit and overwrite
+        import sys
+        original_argv = sys.argv[:]
+        
+        # Add --overwrite flag to force fresh discovery
+        sys.argv = ['url_discovery.py', '--overwrite']
+        
+        url_discovery_main()
+        
+        # Restore original argv
+        sys.argv = original_argv
+        
+        logger.info("URL discovery process completed successfully")
+    except Exception as e:
+        logger.error(f"Failed to run URL discovery: {str(e)}")
+        raise
+
+
+def check_completion_for_symbol(symbol: str) -> bool:
+    """Check if all required files exist for a symbol."""
+    done_path = DONE / f"{symbol}.md"
+    return done_path.exists()
+
+
+def inject_run_pipeline(symbols: Optional[List[str]] = None, overwrite: bool = False) -> None:
+    """Run the pipeline process for specified symbols."""
+    from pipeline.pipeline import PipelineRunner
+    
+    logger.info(f"Starting pipeline process with {len(symbols) if symbols else 'all'} symbols")
+    
+    # Read and parse company URLs
+    try:
+        import json
+        with open(COMPANY_URLS_JSON, 'r') as f:
+            company_urls = json.load(f)
+    except Exception as e:
+        logger.error(f"Error reading company URLs: {str(e)}")
+        raise
+    
+    # Filter symbols for processing if needed
+    all_symbols = symbols if symbols is not None else get_company_universe()
+    
+    # Create pipeline runner
+    runner = PipelineRunner({
+        'overwrite': overwrite,
+        'output_dir': Path('data')
+    })
+    
+    processed_count = 0
+    
+    for symbol in all_symbols:
+        try:
+            logger.info(f"Processing symbol: {symbol}")
+            
+            # Skip if already completed
+            if not overwrite and check_completion_for_symbol(symbol):
+                logger.info(f"Symbol {symbol} already completed, skipping")
+                continue
+                
+            # Prepare URL list for this symbol
+            urls = company_urls.get(symbol, {}).get('all_urls', [])
+            
+            if not urls:
+                logger.warning(f"No URLs found for symbol {symbol}, skipping")
+                continue
+            
+            # Run actual document processing using the existing company_crawler logic
+            from Retrieval.Document.document_crawler import process_single_company
+            process_single_company(symbol, urls, overwrite=overwrite)
+            
+            processed_count += 1
+            
+        except Exception as e:
+            logger.error(f"Error processing symbol {symbol}: {str(e)}")
+            continue
+    
+    logger.info(f"Pipeline process completed. Processed {processed_count} symbols")
+
+
+def run_harvester_pipeline(
+    symbols: Optional[List[str]] = None,
+    stages: Optional[List[str]] = None,
+    overwrite: bool = False,
+    limit: Optional[int] = None,
+    loop: bool = False,
+    loop_interval_hours: int = 24,
+    refresh_universe: bool = False,
+    use_sandbox: bool = False
+) -> None:
+    """Main pipeline execution logic with automatic workflow detection."""
+    
+    # If no explicit arguments provided, run automated bootstrap workflow
+    if stages is None and symbols is None and limit is None and not overwrite and not loop:
+        logger.info("Running automated bootstrap workflow...")
+        
+        # Determine which companies need processing from company_universe.csv
+        universe_symbols = get_company_universe()
+        
+        # Limit to specified count if requested
+        if limit and limit > 0:
+            universe_symbols = universe_symbols[:limit]
+            
+        # Check if we already have URL discovery results
+        if not check_url_discovery_completed():
+            logger.info("Running URL discovery for all companies...")
+            run_url_discovery()
+        else:
+            logger.info("URL discovery already completed, skipping.")
+        
+        # Run pipeline processing with all universe companies from company_urls.json
+        run_pipeline_process(universe_symbols, overwrite=overwrite)
+        
+        # Check if all universe companies are completed now
+        completed_all = True
+        for symbol in universe_symbols:
+            if not check_completion_for_symbol(symbol):
+                completed_all = False
+                break
+                
+        if completed_all and not loop:
+            logger.info("All processing completed successfully")
+            return
+        
+    else:
+        # Fall back to original explicit execution mode
+        if stages is None:
+            stages = ['discover', 'numeric', 'document', 'convert', 'clean', 'chunk', 'normalize']
+            
+        if symbols is None:
+            symbols = get_available_symbols()
+            
+        # Apply limit if specified 
+        if limit and limit > 0:
+            symbols = symbols[:limit]
+            
+        for symbol in symbols:
+            for stage in stages:
+                logger.info(f"Running {stage} stage for {symbol}")
+                
+                run_stage(stage, symbol, overwrite)
 
 
 def run_stage(stage: str, symbol: str, overwrite: bool) -> None:
@@ -130,128 +322,13 @@ def run_source_stage(symbol: str) -> None:
     pass
 
 
-def run_discover_stage(symbol: str) -> None:
-    """Run URL discovery for a symbol."""
-    # This stage would discover URLs from company metadata
-    logger.info(f"Discover stage for {symbol}")
-    # In real implementation, this would call URL discovery functionality
-    pass
+# def run_discover_stage(symbol: str) -> None:
+#     """Run URL discovery for a symbol."""
+#     # This stage would discover URLs from company metadata
+#     logger.info(f"Discover stage for {symbol}")
+#     # In real implementation, this would call URL discovery functionality
+#     pass
 
-
-def run_numeric_stage(symbol: str) -> None:
-    """Run numeric collectors for a symbol."""
-    from Retrieval.Numeric.registry import get_collectors
-    
-    # Get all registered collectors
-    collectors = get_collectors()
-    
-    for collector_class in collectors:
-        try:
-            logger.info(f"Running {collector_class.__name__} for {symbol}")
-            # Create instance and run
-            collector = collector_class()
-            # In a real system, you'd call collector.run(symbol) 
-            # but here we'll just simulate the process
-            logger.info(f"Completed {collector_class.__name__} for {symbol}")
-        except Exception as e:
-            logger.warning(f"Warning: Failed to run {collector_class.__name__} for {symbol}: {str(e)}")
-
-
-def run_document_stage(symbol: str) -> None:
-    """Run document crawler for a symbol."""
-    # In a real implementation, you'd instantiate and run the DocumentCrawler
-    from Retrieval.Document.company_crawler import CompanyCollector
-    
-    try:
-        logger.info(f"Running document crawler for {symbol}")
-        # This would be an actual implementation that uses the crawler
-        logger.info(f"Completed document crawler for {symbol}")
-        
-    except Exception as e:
-        logger.warning(f"Warning: Failed to run document crawler for {symbol}: {str(e)}")
-
-
-def run_convert_stage(symbol: str) -> None:
-    """Run convert stage which includes numeric flattening and file extraction."""
-    from pipeline.converter import flatten
-    from pipeline.converter import FileExtractor
-    
-    try:
-        # Run numeric flattener 
-        logger.info(f"Running numeric flattener for {symbol}")
-        
-        # This would be more specific in a real implementation, but shows concept
-        raw_numeric_dir = Path('data/raw/numeric')
-        trans_numeric_dir = Path('data/trans/numeric')
-        trans_numeric_dir.mkdir(parents=True, exist_ok=True)
-        
-        if raw_numeric_dir.exists():
-            for file_path in raw_numeric_dir.iterdir():
-                if file_path.is_file() and file_path.name.startswith(symbol):
-                    dest_path = trans_numeric_dir / f"{symbol}.json"
-                    result = flatten(file_path, dest_path)
-                    if result["success"]:
-                        logger.info(f"Numeric flattening completed for {symbol}")
-                    else:
-                        logger.warning(f"Numeric flattening failed for {symbol}: {result['error']}")
-                        
-        # Run file extractor
-        logger.info(f"Running file extractor for {symbol}")
-        extractor = FileExtractor(symbol)
-        index_data = extractor.process_all_files()
-        logger.info(f"File extraction completed for {symbol}")
-        
-    except Exception as e:
-        logger.warning(f"Warning: Convert stage failed for {symbol}: {str(e)}")
-
-
-def run_clean_stage(symbol: str) -> None:
-    """Run cleaning for both numeric and document stages."""
-    from pipeline.cleaner import Cleaner
-    
-    try:
-        cleaner = Cleaner()
-        
-        # Clean numeric data
-        logger.info(f"Cleaning numeric data for {symbol}")
-        cleaner.run(symbol, 'numeric')
-        
-        # Clean document data 
-        logger.info(f"Cleaning document data for {symbol}")
-        cleaner.run(symbol, 'document')
-        
-        logger.info(f"Clean stage completed for {symbol}")
-        
-    except Exception as e:
-        logger.warning(f"Warning: Clean stage failed for {symbol}: {str(e)}")
-
-
-def run_chunk_stage(symbol: str) -> None:
-    """Run chunking of document data."""
-    from pipeline.chunker import Chunker
-    
-    try:
-        chunker = Chunker()
-        logger.info(f"Running chunking for {symbol}")
-        chunker.run(symbol)
-        logger.info(f"Chunking completed for {symbol}")
-        
-    except Exception as e:
-        logger.warning(f"Warning: Chunk stage failed for {symbol}: {str(e)}")
-
-
-def run_normalize_stage(symbol: str) -> None:
-    """Run normalization of all processed data."""
-    from pipeline.normalizer import Normalizer
-    
-    try:
-        normalizer = Normalizer()
-        logger.info(f"Running normalization for {symbol}")
-        normalizer.run(symbol)
-        logger.info(f"Normalization completed for {symbol}")
-        
-    except Exception as e:
-        logger.warning(f"Warning: Normalize stage failed for {symbol}: {str(e)}")
 
 
 def parse_args() -> argparse.Namespace:
@@ -272,8 +349,8 @@ def parse_args() -> argparse.Namespace:
                        help='Hours between loops (default: 24)')
     parser.add_argument('--refresh-universe', action='store_true',
                        help='Refresh universe even when looping')
-    parser.add_argument('--sandbox', action='store_true',
-                       help='Use Firecracker sandbox for document and normalize stages')
+    # parser.add_argument('--sandbox', action='store_true',
+    #                   help='Use Firecracker sandbox for document and normalize stages')
     
     return parser.parse_args()
 
