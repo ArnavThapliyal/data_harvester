@@ -15,8 +15,9 @@ from urllib.parse import urlparse
 
 import httpx
 from bs4 import BeautifulSoup
-from crawl4ai import Crawl4AI
-from crawl4ai.web_crawler import WebCrawler
+# from crawl4ai import Crawl4AI
+from crawl4ai import *
+# from crawl4ai.web_crawler import WebCrawler
 
 # Import config settings to know where to put files
 from config.settings import (

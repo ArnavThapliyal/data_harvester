@@ -7,9 +7,12 @@ import sys
 import argparse
 import logging
 import time
+import subprocess
+import csv
+import json
 from pathlib import Path
 from datetime import datetime, timedelta
-from typing import List, Optional
+from typing import List, Optional, Set
 
 from scripts.url_discovery import generate_constant_urls, main as url_discovery_main
 from scripts.build_universe import build_universe
@@ -40,29 +43,29 @@ logger.addHandler(stdout_handler)
 logger.setLevel(logging.INFO)
 
 
-def get_available_symbols() -> List[str]:
-    """Get list of available symbols from universe CSV."""
-    try:
-        import pandas as pd
-        universe_file = Path('config/company_universe.csv')
+# def get_available_symbols() -> List[str]:
+#     """Get list of available symbols from universe CSV."""
+#     try:
+#         import pandas as pd
+#         universe_file = Path('config/company_universe.csv')
         
-        if not universe_file.exists():
-            logger.warning("Universe file not found, using default symbols")
-            return ['RELIANCE', 'TCS', 'HDFCBANK']  # Default fallback
+#         if not universe_file.exists():
+#             logger.warning("Universe file not found, using default symbols")
+#             return ['RELIANCE', 'TCS', 'HDFCBANK']  # Default fallback
             
-        df = pd.read_csv(universe_file)
-        # Handle different column names - look for ticker or Symbol
-        if 'ticker' in df.columns:
-            return df['ticker'].dropna().tolist()
-        elif 'Symbol' in df.columns:
-            return df['Symbol'].dropna().tolist() 
-        else:
-            # If no standard column names found, try to get first column
-            return df.iloc[:, 0].dropna().tolist()
+#         df = pd.read_csv(universe_file)
+#         # Handle different column names - look for ticker or Symbol
+#         if 'ticker' in df.columns:
+#             return df['ticker'].dropna().tolist()
+#         elif 'Symbol' in df.columns:
+#             return df['Symbol'].dropna().tolist() 
+#         else:
+#             # If no standard column names found, try to get first column
+#             return df.iloc[:, 0].dropna().tolist()
             
-    except Exception as e:
-        logger.error(f"Error reading universe file: {str(e)}")
-        return ['RELIANCE', 'TCS', 'HDFCBANK']  # Default fallback
+#     except Exception as e:
+#         logger.error(f"Error reading universe file: {str(e)}")
+#         return ['RELIANCE', 'TCS', 'HDFCBANK']  # Default fallback
 
 
 def get_company_universe() -> List[str]:
@@ -84,29 +87,29 @@ def get_company_universe() -> List[str]:
         return []
 
 
-def check_url_discovery_completed() -> bool:
-    """Check if we can skip URL discovery by looking at existing company_urls.json."""
-    # If company_urls.json doesn't exist, we need to run discovery
-    if not COMPANY_URLS_JSON.exists():
-        return False
+# def check_url_discovery_completed() -> bool:
+#     """Check if we can skip URL discovery by looking at existing company_urls.json."""
+#     # If company_urls.json doesn't exist, we need to run discovery
+#     if not COMPANY_URLS_JSON.exists():
+#         return False
     
-    try:
-        import json
-        with open(COMPANY_URLS_JSON, 'r') as f:
-            urls_data = json.load(f)
+#     try:
+#         import json
+#         with open(COMPANY_URLS_JSON, 'r') as f:
+#             urls_data = json.load(f)
             
-        # Get universe symbols
-        universe_symbols = set(get_company_universe())
+#         # Get universe symbols
+#         universe_symbols = set(get_company_universe())
         
-        # Check how many are already in the URL discovery data
-        discovered_symbols = set(urls_data.keys())
+#         # Check how many are already in the URL discovery data
+#         discovered_symbols = set(urls_data.keys())
         
-        # If we have all companies discovered, skip further discovery
-        return discovered_symbols >= universe_symbols
+#         # If we have all companies discovered, skip further discovery
+#         return discovered_symbols >= universe_symbols
         
-    except Exception as e:
-        logger.warning(f"Error checking URL discovery status: {str(e)}")
-        return False
+#     except Exception as e:
+#         logger.warning(f"Error checking URL discovery status: {str(e)}")
+#         return False
 
 
 def run_url_discovery() -> None:
@@ -133,65 +136,65 @@ def run_url_discovery() -> None:
         raise
 
 
-def check_completion_for_symbol(symbol: str) -> bool:
-    """Check if all required files exist for a symbol."""
-    done_path = DONE / f"{symbol}.md"
-    return done_path.exists()
+# def check_completion_for_symbol(symbol: str) -> bool:
+#     """Check if all required files exist for a symbol."""
+#     done_path = DONE / f"{symbol}.md"
+#     return done_path.exists()
 
 
-def inject_run_pipeline(symbols: Optional[List[str]] = None, overwrite: bool = False) -> None:
-    """Run the pipeline process for specified symbols."""
-    from pipeline.pipeline import PipelineRunner
+# def inject_run_pipeline(symbols: Optional[List[str]] = None, overwrite: bool = False) -> None:
+#     """Run the pipeline process for specified symbols."""
+#     from pipeline.pipeline import PipelineRunner
     
-    logger.info(f"Starting pipeline process with {len(symbols) if symbols else 'all'} symbols")
+#     logger.info(f"Starting pipeline process with {len(symbols) if symbols else 'all'} symbols")
     
-    # Read and parse company URLs
-    try:
-        import json
-        with open(COMPANY_URLS_JSON, 'r') as f:
-            company_urls = json.load(f)
-    except Exception as e:
-        logger.error(f"Error reading company URLs: {str(e)}")
-        raise
+#     # Read and parse company URLs
+#     try:
+#         import json
+#         with open(COMPANY_URLS_JSON, 'r') as f:
+#             company_urls = json.load(f)
+#     except Exception as e:
+#         logger.error(f"Error reading company URLs: {str(e)}")
+#         raise
     
-    # Filter symbols for processing if needed
-    all_symbols = symbols if symbols is not None else get_company_universe()
+#     # Filter symbols for processing if needed
+#     all_symbols = symbols if symbols is not None else get_company_universe()
     
-    # Create pipeline runner
-    runner = PipelineRunner({
-        'overwrite': overwrite,
-        'output_dir': Path('data')
-    })
+#     # Create pipeline runner
+#     runner = PipelineRunner({
+#         'overwrite': overwrite,
+#         'output_dir': Path('data')
+#     })
     
-    processed_count = 0
+#     processed_count = 0
     
-    for symbol in all_symbols:
-        try:
-            logger.info(f"Processing symbol: {symbol}")
+#     for symbol in all_symbols:
+#         try:
+#             logger.info(f"Processing symbol: {symbol}")
             
-            # Skip if already completed
-            if not overwrite and check_completion_for_symbol(symbol):
-                logger.info(f"Symbol {symbol} already completed, skipping")
-                continue
+#             # Skip if already completed
+#             if not overwrite and check_completion_for_symbol(symbol):
+#                 logger.info(f"Symbol {symbol} already completed, skipping")
+#                 continue
                 
-            # Prepare URL list for this symbol
-            urls = company_urls.get(symbol, {}).get('all_urls', [])
+#             # Prepare URL list for this symbol
+#             urls = company_urls.get(symbol, {}).get('all_urls', [])
             
-            if not urls:
-                logger.warning(f"No URLs found for symbol {symbol}, skipping")
-                continue
+#             if not urls:
+#                 logger.warning(f"No URLs found for symbol {symbol}, skipping")
+#                 continue
             
-            # Run actual document processing using the existing company_crawler logic
-            from Retrieval.Document.document_crawler import process_single_company
-            process_single_company(symbol, urls, overwrite=overwrite)
+#             # Run actual document processing using the existing company_crawler logic
+#             from Retrieval.Document.document_crawler import process_single_company
+#             process_single_company(symbol, urls, overwrite=overwrite)
             
-            processed_count += 1
+#             processed_count += 1
             
-        except Exception as e:
-            logger.error(f"Error processing symbol {symbol}: {str(e)}")
-            continue
+#         except Exception as e:
+#             logger.error(f"Error processing symbol {symbol}: {str(e)}")
+#             continue
     
-    logger.info(f"Pipeline process completed. Processed {processed_count} symbols")
+#     logger.info(f"Pipeline process completed. Processed {processed_count} symbols")
 
 
 def run_harvester_pipeline(
@@ -210,6 +213,12 @@ def run_harvester_pipeline(
     if stages is None and symbols is None and limit is None and not overwrite and not loop:
         logger.info("Running automated bootstrap workflow...")
         
+        # First, validate that company_universe.csv exists
+        universe_file = Path('config/company_universe.csv')
+        if not universe_file.exists():
+            logger.error("Error: config/company_universe.csv not found. Please provide the company universe CSV file.")
+            sys.exit(1)
+            
         # Determine which companies need processing from company_universe.csv
         universe_symbols = get_company_universe()
         
@@ -220,7 +229,21 @@ def run_harvester_pipeline(
         # Check if we already have URL discovery results
         if not check_url_discovery_completed():
             logger.info("Running URL discovery for all companies...")
+            
+            # Do an initial run of URL discovery
             run_url_discovery()
+            
+            # Validate URL Discovery and retry any missing or incomplete symbols
+            logger.info("Validating URL discovery results...")
+            valid_symbols = validate_and_retry_url_discovery(universe_symbols)
+            
+            # If there were symbols that needed a retry, re-run discovery only on those
+            if valid_symbols != set(universe_symbols):
+                logger.info(f"Retrying URL discovery for {len(universe_symbols) - len(valid_symbols)} incomplete symbols...")
+                
+                # Create a temporary CSV with only the missing symbols to be discovered again
+                retry_symbols = list(universe_symbols - valid_symbols)
+                run_url_discovery_for_symbols(retry_symbols)
         else:
             logger.info("URL discovery already completed, skipping.")
         
@@ -236,6 +259,10 @@ def run_harvester_pipeline(
                 
         if completed_all and not loop:
             logger.info("All processing completed successfully")
+            
+            # Final summary validation
+            validate_and_print_summary(universe_symbols)
+
             return
         
     else:
@@ -257,69 +284,170 @@ def run_harvester_pipeline(
                 run_stage(stage, symbol, overwrite)
 
 
-def run_stage(stage: str, symbol: str, overwrite: bool) -> None:
-    """Run a specific stage for a symbol."""
+def validate_and_retry_url_discovery(symbols: List[str]) -> Set[str]:
+    """Validate discovered URLs and retry discovery on missing or incomplete symbols."""
     
-    stage_dir = Path(f"data/{stage}")
-    stage_dir.mkdir(parents=True, exist_ok=True)
-    
-    logger.info(f"[{datetime.utcnow().isoformat()}] [START] [{symbol}] {stage} stage")
-    
-    # Define output paths for each stage
-    output_paths = {
-        'source': Path('data'),
-        'discover': Path(f"data/discovered/{symbol}"),
-        'numeric': Path(f"data/cleaned/numeric/{symbol}.json"),
-        'document': Path(f"data/cleaned/documents/{symbol}"),
-        'convert': Path(f"data/trans/documents/{symbol}"),  # For extracted files
-        'clean': Path(f"data/cleaned/numeric/{symbol}.json"),  # This is where clean output goes 
-        'chunk': Path(f"data/chunked/{symbol}"),
-        'normalize': Path(f"data/normalized/{symbol}/{symbol}.json")
-    }
-    
-    output_path = output_paths.get(stage, Path())
-    
-    # Check if output exists and skip if not overwriting
-    if output_path.exists() or (stage in ['numeric', 'document', 'convert', 'clean', 'chunk', 'normalize'] and 
-                                output_path.parent.exists() and output_path.parent.glob('*')):
-        if not overwrite:
-            logger.info(f"[{datetime.utcnow().isoformat()}] [SKIP] [{symbol}] {stage} stage (output exists)")
-            return
-            
+    # Read the discovered symbols from json
+    discovered_urls = {}
     try:
-        # Execute the appropriate logic for each stage
-        if stage == 'source':
-            run_source_stage(symbol)
-        elif stage == 'discover':
-            run_discover_stage(symbol)
-        elif stage == 'numeric':
-            run_numeric_stage(symbol)
-        elif stage == 'document':
-            run_document_stage(symbol)
-        elif stage == 'convert':
-            run_convert_stage(symbol)
-        elif stage == 'clean':
-            run_clean_stage(symbol)
-        elif stage == 'chunk':
-            run_chunk_stage(symbol)
-        elif stage == 'normalize':
-            run_normalize_stage(symbol)
-        
-        logger.info(f"[{datetime.utcnow().isoformat()}] [DONE] [{symbol}] {stage} stage completed")
-        
+        if COMPANY_URLS_JSON.exists():
+            with open(COMPANY_URLS_JSON, 'r') as f:
+                discovered_urls = json.load(f)
     except Exception as e:
-        logger.error(f"[{datetime.utcnow().isoformat()}] [FAIL] [{symbol}] {stage} stage failed: {str(e)}")
+        logger.error(f"Error reading company URLs during validation: {str(e)}")
+        return set()  # Return empty set if error
+    
+    valid_symbols = set()
+    
+    # Check each symbol for enough URLs
+    for symbol in symbols:
+        num_urls = len(discovered_urls.get(symbol, {}).get('all_urls', []))
+        logger.debug(f"Symbol {symbol}: {num_urls} URLs found")
+        
+        if num_urls >= 3:
+            valid_symbols.add(symbol)
+        else:
+            logger.info(f"Symbol {symbol} missing or incomplete URLs ({num_urls} < 3)")
+            
+    return valid_symbols
+
+
+def run_url_discovery_for_symbols(symbols_to_retry: List[str]) -> None:
+    """Run URL discovery specifically on a given list of symbols."""
+    
+    # Use subprocess to run url_discovery.py with specific symbols
+    try:
+        cmd = [sys.executable, 'scripts/url_discovery.py', '--overwrite']
+        if symbols_to_retry:
+            cmd.extend(['--symbols'] + symbols_to_retry)
+        logger.info(f"Running discovery retry for {len(symbols_to_retry)} symbols")
+        subprocess.run(cmd, check=True, capture_output=True, text=True)
+        logger.debug("URL discovery retry completed successfully.")
+    except subprocess.CalledProcessError as e:
+        logger.error(f"Failed to run URL discovery retry: {e.stderr}")
+
+
+def run_pipeline_process(symbols: List[str], overwrite: bool = False) -> None:
+    """Execute the pipeline for specified symbols."""
+    # Run with subprocess to execute the pipeline
+    try:
+        cmd = [sys.executable, 'pipeline/pipeline.py', '--Retreve_document']
+        if overwrite:
+            cmd.append('--overwrite')
+        
+        logger.info("Executing pipeline process...")
+        result = subprocess.run(cmd, check=True, capture_output=True, text=True)
+        logger.debug(f"Pipeline run completed. Output: {result.stdout}")
+    except subprocess.CalledProcessError as e:
+        logger.error(f"Failed to execute pipeline process: {e.stderr}")
         raise
+    
+
+def validate_and_print_summary(symbols: List[str]) -> None:
+    """Validate final output files and print a summary report."""
+    document_present = 0
+    document_missing = 0
+    numeric_present = 0
+    numeric_missing = 0
+    
+    missing_docs = []
+    missing_numerics = []
+    
+    done_dir = Path('data/done')
+    done_dir.mkdir(exist_ok=True)
+    
+    for symbol in symbols:
+        doc_path = done_dir / f"{symbol}_document.md"
+        numeric_path = done_dir / f"{symbol}_numeric.md"
+        
+        docs_exist = doc_path.exists()
+        numerics_exist = numeric_path.exists()
+
+        if docs_exist:
+            document_present += 1
+        else:
+            document_missing += 1
+            missing_docs.append(symbol)
+            
+        if numerics_exist:
+            numeric_present += 1
+        else:
+            numeric_missing += 1
+            missing_numerics.append(symbol)
+    
+    print(f"\nDocument files: {document_present} present, {document_missing} missing.")
+    print(f"Numeric files: {numeric_present} present, {numeric_missing} missing.")
+    
+    if missing_docs:
+        print(f"Missing document files for symbols: {', '.join(missing_docs)}")
+        
+    if missing_numerics:
+        print(f"Missing numeric files for symbols: {', '.join(missing_numerics)}")
 
 
-def run_source_stage(symbol: str) -> None:
-    """Run the source stage - builds universe from constituent data."""
-    # For this implementation, we assume that build_universe.py is already available
-    from scripts.build_universe import build_universe
+# def run_stage(stage: str, symbol: str, overwrite: bool) -> None:
+#     """Run a specific stage for a symbol."""
+    
+#     stage_dir = Path(f"data/{stage}")
+#     stage_dir.mkdir(parents=True, exist_ok=True)
+    
+#     logger.info(f"[{datetime.utcnow().isoformat()}] [START] [{symbol}] {stage} stage")
+    
+#     # Define output paths for each stage
+#     output_paths = {
+#         'source': Path('data'),
+#         'discover': Path(f"data/discovered/{symbol}"),
+#         'numeric': Path(f"data/cleaned/numeric/{symbol}.json"),
+#         'document': Path(f"data/cleaned/documents/{symbol}"),
+#         'convert': Path(f"data/trans/documents/{symbol}"),  # For extracted files
+#         'clean': Path(f"data/cleaned/numeric/{symbol}.json"),  # This is where clean output goes 
+#         'chunk': Path(f"data/chunked/{symbol}"),
+#         'normalize': Path(f"data/normalized/{symbol}/{symbol}.json")
+#     }
+    
+#     output_path = output_paths.get(stage, Path())
+    
+#     # Check if output exists and skip if not overwriting
+#     if output_path.exists() or (stage in ['numeric', 'document', 'convert', 'clean', 'chunk', 'normalize'] and 
+#                                 output_path.parent.exists() and output_path.parent.glob('*')):
+#         if not overwrite:
+#             logger.info(f"[{datetime.utcnow().isoformat()}] [SKIP] [{symbol}] {stage} stage (output exists)")
+#             return
+            
+#     try:
+#         # Execute the appropriate logic for each stage
+#         if stage == 'source':
+#             run_source_stage(symbol)
+#         elif stage == 'discover':
+#             run_discover_stage(symbol)
+#         elif stage == 'numeric':
+#             run_numeric_stage(symbol)
+#         elif stage == 'document':
+#             run_document_stage(symbol)
+#         elif stage == 'convert':
+#             run_convert_stage(symbol)
+#         elif stage == 'clean':
+#             run_clean_stage(symbol)
+#         elif stage == 'chunk':
+#             run_chunk_stage(symbol)
+#         elif stage == 'normalize':
+#             run_normalize_stage(symbol)
+        
+#         logger.info(f"[{datetime.utcnow().isoformat()}] [DONE] [{symbol}] {stage} stage completed")
+        
+#     except Exception as e:
+#         logger.error(f"[{datetime.utcnow().isoformat()}] [FAIL] [{symbol}] {stage} stage failed: {str(e)}")
+#         raise
 
-    # In real implementation, you'd call actual universe building logic  
-    logger.info("Source stage would build universe")
-    pass
+
+# def run_source_stage(symbol: str) -> None:
+#     """Run the source stage - builds universe from constituent data."""
+#     # For this implementation, we assume that build_universe.py is already available
+#     from scripts.build_universe import build_universe
+
+#     # In real implementation, you'd call actual universe building logic  
+#     logger.info("Source stage would build universe")
+#     pass
 
 
 # def run_discover_stage(symbol: str) -> None:
@@ -328,6 +456,8 @@ def run_source_stage(symbol: str) -> None:
 #     logger.info(f"Discover stage for {symbol}")
 #     # In real implementation, this would call URL discovery functionality
 #     pass
+
+
 
 
 
@@ -349,6 +479,13 @@ def parse_args() -> argparse.Namespace:
                        help='Hours between loops (default: 24)')
     parser.add_argument('--refresh-universe', action='store_true',
                        help='Refresh universe even when looping')
+    # New arguments for bootstrap workflow
+    parser.add_argument('--first-run', action='store_true',
+                       help='Initiate the first run bootstrap workflow')
+    parser.add_argument('--no-loop', action='store_true',
+                       help='Disable loop behavior during first run')
+    parser.add_argument('--Retreve_document', action='store_true',
+                       help='Include document retrieval step in pipeline') 
     # parser.add_argument('--sandbox', action='store_true',
     #                   help='Use Firecracker sandbox for document and normalize stages')
     
@@ -362,23 +499,50 @@ def main() -> None:
     
     args = parse_args()
     
-    try:
-        run_harvester_pipeline(
-            symbols=args.symbols,
-            stages=args.stages,
-            overwrite=args.overwrite,
-            limit=args.limit,
-            loop=args.loop,
-            loop_interval_hours=args.loop_interval,
-            refresh_universe=args.refresh_universe,
-            use_sandbox=args.sandbox
-        )
-    except KeyboardInterrupt:
-        logger.info("Pipeline interrupted by user")
-        sys.exit(1)
-    except Exception as e:
-        logger.error(f"Pipeline failed: {str(e)}")
-        sys.exit(1)
+    # Check if first run bootstrap workflow should be initiated
+    if args.first_run and args.no_loop and args.Retreve_document:
+        logger.info("Initiating first-run bootstrap workflow...")
+        
+        # Validate company_universe.csv exists as required for this workflow
+        universe_file = Path('config/company_universe.csv')
+        if not universe_file.exists():
+            logger.error("Error: config/company_universe.csv not found. Please provide the company universe CSV file.")
+            sys.exit(1)
+            
+        try:
+            run_harvester_pipeline(
+                symbols=None,
+                stages=None,
+                overwrite=False,
+                limit=None,
+                loop=False,
+                loop_interval_hours=24,
+                refresh_universe=False
+            )
+        except KeyboardInterrupt:
+            logger.info("Pipeline interrupted by user")
+            sys.exit(1)
+        except Exception as e:
+            logger.error(f"Pipeline failed: {str(e)}")
+            sys.exit(1)
+    else:
+        try:
+            run_harvester_pipeline(
+                symbols=args.symbols,
+                stages=args.stages,
+                overwrite=args.overwrite,
+                limit=args.limit,
+                loop=args.loop,
+                loop_interval_hours=args.loop_interval,
+                refresh_universe=args.refresh_universe,
+                use_sandbox=args.sandbox
+            )
+        except KeyboardInterrupt:
+            logger.info("Pipeline interrupted by user")
+            sys.exit(1)
+        except Exception as e:
+            logger.error(f"Pipeline failed: {str(e)}")
+            sys.exit(1)
 
 
 if __name__ == "__main__":

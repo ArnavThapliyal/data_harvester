@@ -1,4 +1,4 @@
-Syobol,isin,bse_code,name,industry,market_cap_category,Index
+Symbol,isin,bse_code,name,industry,market_cap_category,Index
 360ONE,INE466L01038,542772,360 ONE WAM Ltd.,Financial Services,mid_small_cap,nifty_midsmallcap400
 3MINDIA,INE470A01017,523395,3M India Ltd.,Diversified,mid_small_cap,nifty_midsmallcap400
 ACC,INE012A01025,500410,ACC Ltd.,Construction Materials,mid_small_cap,nifty_midsmallcap400

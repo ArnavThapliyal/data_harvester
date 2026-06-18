@@ -9,12 +9,12 @@ from typing import List, Dict, Any
 # from .documents import CollectedDocument
 # from .storage import StorageProvider
 from Retrieval.registry import get_collector
-from Retrieval.Document.document_crawler import process_symbol_urls
+# from Retrieval.Document.document_crawler import process_symbol_urls
 from pipeline.cleaner import Cleaner
 from pipeline.chunker import Chunker
 from pipeline.normalizer import Normalizer
 from pipeline.storage import StorageProvider
-from pipeline.utils import get_available_symbols
+# from pipeline.utils import get_available_symbols #utils is empty and the use of it is not decided
 # from pipeline.collectors import get_collectors # /data_harvester/Retrieval/Numeric/registry.py i think this is what we need to use
 from pipeline.documents import CollectedDocument
 from pipeline.converter import FileExtractor
@@ -32,9 +32,9 @@ class PipelineRunner:
         self.storage = StorageProvider(config)
         self.collectors: List[BaseCollector] = []
         
-    def add_collector(self, collector: BaseCollector):
-        """Add a collector to the pipeline."""
-        self.collectors.append(collector)
+    # def add_collector(self, collector: BaseCollector):
+    #     """Add a collector to the pipeline."""
+    #     self.collectors.append(collector)
         
     def run(self):
         """Execute the full data collection and processing pipeline."""
