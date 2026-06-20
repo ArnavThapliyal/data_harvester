@@ -1,4 +1,5 @@
-# % tree -a -I '.git|.venv|__pycache__|node_modules|dist|build' > project-structure.txt
+# tree -a -I '.git|.venv|__pycache__|node_modules|dist|build' > project-structure.txt
+
 .
 ├── .DS_Store
 ├── .env
@@ -14,6 +15,8 @@
 │   │   ├── 2809088425588444286
 │   │   └── 7432333973196385277
 │   └── CACHEDIR.TAG
+├── .vscode
+│   └── launch.json
 ├── Doc
 │   ├── Base Collector arch designe
 │   ├── collector_validation_report.txt
@@ -29,7 +32,7 @@
 ├── Retrieval
 │   ├── .DS_Store
 │   ├── Document
-│   │   ├── company_crawler.py
+│   │   ├── __init__.py
 │   │   └── document_crawler.py
 │   ├── Numeric
 │   │   ├── __init__.py
@@ -40,9 +43,11 @@
 │   │   ├── nse_collector.py
 │   │   ├── screener_collector.py
 │   │   └── yfinance_collector.py
+│   ├── __init__.py
 │   ├── registry.py
 │   └── transcript_collector.py
 ├── config
+│   ├── __init__.py
 │   ├── company_universe.csv
 │   ├── company_universe.yaml
 │   ├── company_urls.json
@@ -51,55 +56,46 @@
 │       ├── ind_NiftyMidSmallcap4005050_list.csv
 │       ├── ind_niftymidcapselect_list (1).csv
 │       └── ind_niftysmallcap50list.csv
-├── converter
-│   ├── __init__.py
-│   ├── file_extractor.py
-│   └── numeric_flattener.py
 ├── data
 │   ├── .DS_Store
 │   ├── chunked
 │   ├── cleaned
 │   │   ├── documents
 │   │   └── numeric
-│   ├── exports
-│   └── raw
-│       ├── 360ONE.json
-│       ├── 3MINDIA.json
-│       ├── bse
+│   ├── done
+│   ├── pipeline.log
+│   ├── raw
+│   │   ├── 360ONE.json
+│   │   ├── 3MINDIA.json
+│   │   ├── bse
+│   │   ├── documents
+│   │   │   └── other
+│   │   ├── manifest.json
+│   │   ├── nse
+│   │   ├── numeric
+│   │   └── test.txt
+│   └── transient
 │       ├── documents
-│       │   └── other
-│       ├── manifest.json
-│       ├── nse
-│       ├── numeric
-│       └── test.txt
+│       └── numeric
 ├── live_smoke_test_plan.txt
 ├── main.py
-├── main_pipeline.py
 ├── pipeline
 │   ├── __init__.py
 │   ├── chunker.py
 │   ├── cleaner.py
-│   ├── collectors.py
-│   ├── documents.py
 │   ├── embedder.py
-│   ├── exporter.py
-│   ├── firecracker_runner.py
 │   ├── normalizer.py
+│   ├── parser.py
 │   ├── pipeline.py
-│   ├── storage.py
-│   └── utils.py
+│   ├── type_router.py
+│   ├── utils.py
+│   └── vector_store.py
 ├── project-structure.txt
 ├── pyproject.toml
-├── sandbox
-│   ├── README.md
-│   ├── file_bridge.py
-│   ├── firecracker_runner.py
-│   └── scanner.py
 ├── scripts
+│   ├── __init__.py
 │   ├── build_universe.py
 │   └── url_discovery.py
-├── storage
-│   └── raw_store.py
 ├── tests
 │   ├── dry_run_trace.py
 │   ├── test_all_collectors.py
@@ -113,4 +109,4 @@
 ├── uv.lock
 └── validate_startup.py
 
-27 directories, 86 files
+28 directories, 80 files

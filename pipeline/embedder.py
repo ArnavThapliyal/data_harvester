@@ -1,5 +1,9 @@
 """
 Embedder for pipeline - generates embeddings for text chunks.
+
+all-MiniLM-L6-v2 via the sentence-transformers
+
+
 """
 import os
 import json
