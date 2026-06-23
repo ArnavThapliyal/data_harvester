@@ -92,7 +92,7 @@ def get_company_universe() -> List[str]:
 #     # If company_urls.json doesn't exist, we need to run discovery
 #     if not COMPANY_URLS_JSON.exists():
 #         return False
-    
+
 #     try:
 #         import json
 #         with open(COMPANY_URLS_JSON, 'r') as f:
@@ -176,7 +176,7 @@ def run_url_discovery() -> None:
 #             if not overwrite and check_completion_for_symbol(symbol):
 #                 logger.info(f"Symbol {symbol} already completed, skipping")
 #                 continue
-                
+            
 #             # Prepare URL list for this symbol
 #             urls = company_urls.get(symbol, {}).get('all_urls', [])
             
@@ -262,7 +262,7 @@ def run_harvester_pipeline(
             
             # Final summary validation
             validate_and_print_summary(universe_symbols)
-
+            
             return
         
     else:
@@ -329,19 +329,35 @@ def run_url_discovery_for_symbols(symbols_to_retry: List[str]) -> None:
 
 def run_pipeline_process(symbols: List[str], overwrite: bool = False) -> None:
     """Execute the pipeline for specified symbols."""
-    # Run with subprocess to execute the pipeline
+    # For this implementation, we'll directly create and run the pipeline
     try:
-        cmd = [sys.executable, 'pipeline/pipeline.py', '--Retreve_document']
-        if overwrite:
-            cmd.append('--overwrite')
+        # Read company URLs
+        import json
+        with open(COMPANY_URLS_JSON, 'r') as f:
+            company_urls = json.load(f)
         
-        logger.info("Executing pipeline process...")
-        result = subprocess.run(cmd, check=True, capture_output=True, text=True)
-        logger.debug(f"Pipeline run completed. Output: {result.stdout}")
-    except subprocess.CalledProcessError as e:
-        logger.error(f"Failed to execute pipeline process: {e.stderr}")
+        # Import and run pipeline
+        logger.info("Initiating pipeline execution...")
+        from pipeline.pipeline import PipelineRunner
+        
+        runner = PipelineRunner({
+            'overwrite': overwrite,
+            'output_dir': Path('data')
+        })
+        
+        for symbol in symbols:
+            logger.info(f"Processing symbol: {symbol}")
+            # Validate symbol exists in URL database
+            if symbol not in company_urls:
+                logger.warning(f"Symbol {symbol} not found in company_urls.json. Skipping.")
+                continue
+            
+            runner.run([symbol])
+            
+    except Exception as e:
+        logger.error(f"Failed to execute pipeline process: {str(e)}")
         raise
-    
+
 
 def validate_and_print_summary(symbols: List[str]) -> None:
     """Validate final output files and print a summary report."""
@@ -458,17 +474,19 @@ def validate_and_print_summary(symbols: List[str]) -> None:
 #     pass
 
 
-
-
-
 def parse_args() -> argparse.Namespace:
     """Parse command line arguments."""
     parser = argparse.ArgumentParser(description='Data Harvester Pipeline')
     
+    # Add mutually exclusive group for symbol selection
+    symbol_group = parser.add_mutually_exclusive_group(required=True)
+    symbol_group.add_argument('--all_symbols', action='store_true',
+                              help='Process all symbols from company_urls.json')
+    symbol_group.add_argument('--symbol', type=str,
+                              help='Process a single symbol from company_urls.json')
+    
     parser.add_argument('--stages', nargs='+', 
                        help='Stages to run (source, discover, numeric, document, convert, clean, chunk, normalize)')
-    parser.add_argument('--symbols', nargs='+',
-                       help='Symbols to process (default: all symbols from universe)')
     parser.add_argument('--limit', type=int,
                        help='Maximum number of symbols to process')
     parser.add_argument('--overwrite', action='store_true',
@@ -499,6 +517,31 @@ def main() -> None:
     
     args = parse_args()
     
+    # Validate --symbol argument if provided
+    if args.symbol:
+        try:
+            with open(COMPANY_URLS_JSON, 'r') as f:
+                company_urls = json.load(f)
+            
+            if args.symbol not in company_urls:
+                print(f"Error: Symbol '{args.symbol}' not found in company_urls.json")
+                sys.exit(1)
+        except Exception as e:
+            print(f"Error validating symbol: {str(e)}")
+            sys.exit(1)
+    
+    # Handle --all_symbols vs --symbol
+    if args.all_symbols:
+        try:
+            with open(COMPANY_URLS_JSON, 'r') as f:
+                company_urls = json.load(f)
+            symbols = list(company_urls.keys())
+        except Exception as e:
+            print(f"Error reading company_urls.json: {str(e)}")
+            sys.exit(1)
+    else:
+        symbols = [args.symbol]
+    
     # Check if first run bootstrap workflow should be initiated
     if args.first_run and args.no_loop and args.Retreve_document:
         logger.info("Initiating first-run bootstrap workflow...")
@@ -528,7 +571,7 @@ def main() -> None:
     else:
         try:
             run_harvester_pipeline(
-                symbols=args.symbols,
+                symbols=symbols,
                 stages=args.stages,
                 overwrite=args.overwrite,
                 limit=args.limit,
@@ -547,4 +590,3 @@ def main() -> None:
 
 if __name__ == "__main__":
     main()
-

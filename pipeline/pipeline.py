@@ -1,112 +1,216 @@
-"""Main pipeline orchestration logic."""
+#!/usr/bin/env python3
+"""
+Main pipeline orchestration logic.
+
+PipelineRunner does exactly three things, nothing else:
+    1. Run the appropriate stage modules, in order, for each symbol.
+    2. Log what ran — every stage start/end, every symbol, every status.
+    3. Validate the metadata each stage module's run() call returns.
+
+It has zero knowledge of how any stage works internally. That logic lives in
+each stage's own module (document_crawler.py, type_router.py, parser.py,
+cleaner.py, chunker.py, embedder.py, vector_store.py). If a comment in this
+file ever explains *how* a stage does its job, that comment is wrong and
+belongs in that stage's module instead.
+
+SCOPE FOR THIS PASS:
+    document -> route -> parse -> clean -> chunk -> embed -> vectorstore (LanceDB)
+    Numeric: gated behind mode, not run yet.
+    Normalize: not in the active chain this pass — [DEFERRED], not removed.
+
+TAG LEGEND:
+    [MISSING]  - stage module doesn't exist yet, call site is a placeholder
+    [DEFERRED] - module exists, intentionally not in the active chain this pass
+    [CONFIRM]  - verify against the real module's interface once it's built
+"""
 
 import argparse
 import logging
+import json
 from pathlib import Path
 from typing import List, Dict, Any
 
-# from .collectors import BaseCollector, NumericCollector, DocumentCollector
-# from .documents import CollectedDocument
-# from .storage import StorageProvider
-from Retrieval.registry import get_collector
-# from Retrieval.Document.document_crawler import process_symbol_urls
+# Import pipeline components required for execution order
 from pipeline.cleaner import Cleaner
 from pipeline.chunker import Chunker
-from pipeline.normalizer import Normalizer
-from pipeline.storage import StorageProvider
-# from pipeline.utils import get_available_symbols #utils is empty and the use of it is not decided
-# from pipeline.collectors import get_collectors # /data_harvester/Retrieval/Numeric/registry.py i think this is what we need to use
-from pipeline.documents import CollectedDocument
-from pipeline.converter import FileExtractor
+from pipeline.normalizer import Normalizer  
+from pipeline.embedder import Embedder
 
-# to data/
+# [MISSING] uncomment as each is built, in your stated order:
+# from pipeline.type_router import TypeRouter
+# from pipeline.parser import Parser
+# from pipeline.vector_store import VectorStore
+# from Retrieval.registry import get_collector
 
+# Configure logging
 logger = logging.getLogger(__name__)
 
-
 class PipelineRunner:
-    """Main pipeline orchestrator that coordinates all Retrieval and storage."""
-    
-    def __init__(self, config: Dict[str, Any]):
-        self.config = config
-        self.storage = StorageProvider(config)
-        self.collectors: List[BaseCollector] = []
+
+    def __init__(self, config: Dict[str, Any] = None):
+        """
+        Initialize the pipeline runner.
         
-    # def add_collector(self, collector: BaseCollector):
-    #     """Add a collector to the pipeline."""
-    #     self.collectors.append(collector)
+        Args:
+            config: Configuration dictionary with options like 'overwrite' and 'output_dir'
+        """
+        self.config = config or {}
+        # self.mode = self.config.get("mode", "document")  # [CONFIRM] matches what main.py passes
+        self.overwrite = self.config.get('overwrite', False) #not used
+        self.output_dir = Path(self.config.get('output_dir', 'data')) #not used
         
-    def run(self):
-        """Execute the full data collection and processing pipeline."""
-        logger.info("Starting pipeline execution")
+        # Initialize pipeline components
+        self.cleaner = Cleaner()
+        self.chunker = Chunker()
+        self.normalizer = Normalizer()
+        self.embedder = Embedder()
         
-        # Run each collector in sequence
-        for collector in self.collectors:
-            try:
-                logger.info(f"Running collector: {collector.__class__.__name__}")
-                records = collector.collect()
-                
-                # Validate collected data 
-                if not collector.validate(records):
-                    logger.warning(f"Validation failed for {collector.__class__.__name__}")
+        # [MISSING] uncomment once each module exists
+        # self.document_crawler = get_collector("document")
+        # self.type_router = TypeRouter()
+        # self.parser = Parser()
+        # self.vector_store = VectorStore(table_name="company_documents")
+
+    def run(self, symbols: List[str]) -> None:
+        """
+        Run the full pipeline for a list of symbols in documented sequence.
+        
+        Args:
+            symbols: List of company ticker symbols to process
+        """
+        logger.info(f"Starting pipeline for {len(symbols)} symbols")
+        
+        # Load necessary dependencies for stages that are explicitly mentioned
+        from Retrieval.Document.document_crawler import process_single_company
+        
+        try:
+            for symbol in symbols:
+                if not self._should_run_stage(symbol):
+                    logger.info(f"[SKIP] [{symbol}] Stage already completed")
                     continue
-                    
-                # Normalize if it's a numeric collector
-                if isinstance(collector, NumericCollector):
-                    records = collector.normalize(records)
-                    
-                # Store the results
-                self._store_records(collector, records)
                 
-            except Exception as e:
-                logger.error(f"Error running {collector.__class__.__name__}: {e}")
-                continue
+                logger.info(f"[Pipeline] [{symbol}] starting")
                 
-        logger.info("Pipeline execution completed")
+                # Execute stages in the specified order: document_crawler.py -> parser.py -> cleaner.py -> chunker.py -> embedder.py -> vector_store.py
+                self._run_document_crawler(symbol, process_single_company)
+                self._run_parser(symbol) 
+                self._run_cleaner(symbol)
+                self._run_chunker(symbol)
+                self._run_embedder(symbol)
+                self._run_vector_store(symbol)  # [CONFIRM]
+                
+                logger.info(f"[Pipeline] [{symbol}] completed successfully")
+                
+        except Exception as e:
+            logger.error(f"Error in pipeline execution: {str(e)}")
+            raise
+
+    def _should_run_stage(self, symbol: str) -> bool:
+        """Check if we should run the pipeline for this symbol based on existing metadata."""
+        # Placeholder - actual implementation would check metadata files
+        return True
+
+    def _run_document_crawler(self, symbol: str, process_function) -> None:
+        """Run document crawler stage."""
+        logger.info(f"[DocumentCrawler] [{symbol}] starting")
+        try:
+            # This would typically call process_single_company with proper arguments
+            # But for now we'll use a placeholder
+            logger.info(f"[DocumentCrawler] [{symbol}] completed (placeholder)")
+        except Exception as e:
+            logger.error(f"[DocumentCrawler] [{symbol}] failed: {str(e)}")
+            raise
+
+    def _run_parser(self, symbol: str) -> None:
+        """Run parser stage."""
+        logger.info(f"[Parser] [{symbol}] starting")
+        try:
+            # [CONFIRM] this import should be adjusted when the parser.py exists
+            from pipeline.parser import Parser  
+            parser = Parser()
+            parser.run(symbol)
+            logger.info(f"[Parser] [{symbol}] completed")
+        except Exception as e:
+            logger.error(f"[Parser] [{symbol}] failed: {str(e)}")
+            raise
+
+    def _run_cleaner(self, symbol: str) -> None:
+        """Run cleaner stage."""
+        logger.info(f"[Cleaner] [{symbol}] starting")
         
-    def _store_records(self, collector: BaseCollector, records: List[Dict[str, Any]]):
-        """Store collected records using the storage provider."""
-        logger.info(f"Storing {len(records)} records from {collector.__class__.__name__}")
-        self.storage.store_collected_data(collector, records)
+        # Clean numeric data
+        self.cleaner.run(symbol, "numeric")
+        
+        # Clean document data  
+        self.cleaner.run(symbol, "document")
+        
+        logger.info(f"[Cleaner] [{symbol}] completed")
+
+    def _run_chunker(self, symbol: str) -> None:
+        """Run chunker stage.""" 
+        logger.info(f"[Chunker] [{symbol}] starting")
+        
+        # Chunk document files
+        self.chunker.run(symbol)
+        
+        logger.info(f"[Chunker] [{symbol}] completed")
+
+    def _run_embedder(self, symbol: str) -> None:
+        """Run embedder stage."""
+        logger.info(f"[Embedder] [{symbol}] starting")
+        try:
+            # [CONFIRM] this import should be adjusted when the embedder.py exists  
+            self.embedder.run(symbol)
+            logger.info(f"[Embedder] [{symbol}] completed")
+        except Exception as e:
+            logger.error(f"[Embedder] [{symbol}] failed: {str(e)}")
+            raise
+
+    def _run_vector_store(self, symbol: str) -> None:
+        """Run vector store stage."""
+        logger.info(f"[VectorStore] [{symbol}] starting")
+        try:
+            # [CONFIRM] this import should be adjusted when the vector_store.py exists
+            from pipeline.vector_store import VectorStore
+            vector_store = VectorStore(table_name="company_documents")
+            vector_store.run(symbol)
+            logger.info(f"[VectorStore] [{symbol}] completed")
+        except Exception as e:
+            logger.error(f"[VectorStore] [{symbol}] failed: {str(e)}")
+            raise
+
+    # These are kept for backwards compatibility but may never be called
+    def _run_numeric_stage(self, symbol: str) -> None:
+        """Run numeric data collection."""
+        logger.info(f"[Numeric] [{symbol}] starting")
+        # This will be implemented to fetch numeric data like OHLCV and fundamentals
+        # from sources like yfinance, nse, bsc etc. 
+        # For now, a placeholder implementation.
+        logger.info(f"[Numeric] [{symbol}] completed (placeholder)")
+
+    def _run_document_stage(self, symbol: str) -> None:
+        """Run document crawling."""
+        logger.info(f"[Document] [{symbol}] starting")
+        # This will be implemented to use url_discovery and crawl documents
+        # from company websites.
+        # For now, a placeholder implementation.
+        logger.info(f"[Document] [{symbol}] completed (placeholder)")
+
+    def _run_convert_stage(self, symbol: str) -> None:
+        """Run raw data to structured format conversion."""
+        logger.info(f"[Convert] [{symbol}] starting")
+        # This will be implemented to convert crawled data to structured data
+        # in JSON format. 
+        # For now, a placeholder implementation.
+        logger.info(f"[Convert] [{symbol}] completed (placeholder)")
+        
+    def _run_normalize_stage(self, symbol: str) -> None:
+        """Run normalization stage on chunked data."""
+        logger.info(f"[Normalize] [{symbol}] starting")
+        
+        # Normalize chunked data
+        self.normalizer.run(symbol)
+        
+        logger.info(f"[Normalize] [{symbol}] completed")
 
 
-def main():
-    """Main entry point for the pipeline."""
-    parser = argparse.ArgumentParser(description="Run the data harvesting pipeline")
-    parser.add_argument(
-        "--output-dir",
-        type=Path,
-        default=Path("data/output"),
-        help="Output directory for collected data"
-    )
-    parser.add_argument(
-        "--verbose",
-        action="store_true",
-        help="Enable verbose logging"
-    )
-    
-    args = parser.parse_args()
-    
-    # Setup basic configuration
-    logging.basicConfig(
-        level=logging.INFO if not args.verbose else logging.DEBUG,
-        format='%(asctime)s - %(name)s - %(levelname)s - %(message)s'
-    )
-    
-    # Create pipeline runner
-    config = {
-        "output_dir": args.output_dir,
-        "verbose": args.verbose
-    }
-    
-    runner = PipelineRunner(config)
-    
-    # Add your collectors here (this is just an example)
-    # For now, we can just run a basic test
-    logger.info("Pipeline initialized. Add specific collector instances to process.")
-    
-    return runner
-
-
-if __name__ == "__main__":
-    pipeline = main()

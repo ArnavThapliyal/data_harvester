@@ -4,6 +4,7 @@ import json
 import logging
 import os
 import time
+import crawl4ai
 from datetime import datetime
 from pathlib import Path
 from typing import Any
@@ -25,7 +26,7 @@ def generate_constant_urls(symbol: str, bse_code: str, name: str) -> dict[str, d
     # Generate name slug for URL
     name_slug = name.lower().replace(" ", "-").replace("&", "and")
     
-    return {
+    return { # we cant just have random hallusanated urls/ url templates 
         "bse_filings": {
             "url": f"https://www.bseindia.com/corporates/ann.html?scripcd={bse_code}",
             "type": "constant",
@@ -43,7 +44,7 @@ def generate_constant_urls(symbol: str, bse_code: str, name: str) -> dict[str, d
         }
     }
 
-
+# this is not implemented
 def find_investor_relations_url(company_name: str) -> str | None:
     """Use crawl4ai to search for investor relations page.
     
