@@ -1,7 +1,0 @@
-companies:
-  - ticker: "RELIANCE"        # NSE symbol
-    isin: "INE002A01018"      # stable cross-source identifier
-    bse_code: "500325"        # BSE scrip code (needed for BSE filing APIs)
-    name: "Reliance Industries Ltd"
-    market_cap_category: "low_mid_cap"
-    index: "nifty_midsmallcap400"

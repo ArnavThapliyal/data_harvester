@@ -1,8 +1,14 @@
 {
-  "RELIANCE": [
-    "https://www.reliance.com"
-  ],
-  "TCS": [
-    "https://www.tcs.com"
-  ]
+  "TCS": {
+    "symbol": "TCS",
+    "discovered_at": "2026-06-24T00:00:00+00:00",
+    "sources": {
+      "bse_filings": {"url": "...", "category": "regulatory_filings", "enabled": true},
+      "nse_announcements": {"url": "...", "category": "regulatory_filings", "enabled": true},
+      "screener_standalone": {"url": "...", "category": "financial_documents", "enabled": true},
+      "screener_consolidated": {"url": "...", "category": "financial_documents", "enabled": true},
+      "bse_insider_trading": {"url": "...", "category": "market_shareholding", "enabled": true}
+    },
+    "all_urls": ["..."]
+  }
 }
