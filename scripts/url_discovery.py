@@ -41,18 +41,21 @@ def load_universe(csv_path: Path) -> list[dict]:
         sys.exit(1)
 
     # Filter out rows where BSE code is blank, non-numeric, or 'Unlisted'
-    def is_valid_bse_code(code):
+    def is_valid_bse_code(code, symbol):
         if pd.isna(code) or str(code).strip() == '':
+            logger.info(f"Filtering out row with blank BSE code for symbol '{symbol}'")
             return False
         if str(code).lower().strip() == 'unlisted':
+            logger.info(f"Filtering out row with 'Unlisted' BSE code for symbol '{symbol}'")
             return False
         try:
             int(code)
             return True
         except ValueError:
+            logger.info(f"Filtering out row with non-numeric BSE code '{code}' for symbol '{symbol}'")
             return False
 
-    df_filtered = df[df[bse_col].apply(is_valid_bse_code)].copy()
+    df_filtered = df[df.apply(lambda row: is_valid_bse_code(row[bse_col], row[symbol_col]), axis=1)].copy()
     df_filtered[symbol_col] = df_filtered[symbol_col].astype(str).str.strip()
     df_filtered[bse_col] = df_filtered[bse_col].astype(int).astype(str)
 
@@ -65,6 +68,11 @@ def load_universe(csv_path: Path) -> list[dict]:
             "name": row.get(name_col, "") if name_col else ""
         })
 
+    total_rows = len(df)
+    filtered_rows = total_rows - len(df_filtered)
+    processed_rows = len(df_filtered)
+    logger.info(f"Filtered out {filtered_rows} of {total_rows} rows; processing {processed_rows}")
+    
     return universe
 
 
