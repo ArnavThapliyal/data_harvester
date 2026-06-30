@@ -1,38 +1,4 @@
 {
-  "TCS": {
-    "symbol": "TCS",
-    "discovered_at": "2026-06-24T00:00:00+00:00",
-    "sources": {
-      "bse_filings": {
-        "url": "...",
-        "category": "regulatory_filings",
-        "enabled": true
-      },
-      "nse_announcements": {
-        "url": "...",
-        "category": "regulatory_filings",
-        "enabled": true
-      },
-      "screener_standalone": {
-        "url": "...",
-        "category": "financial_documents",
-        "enabled": true
-      },
-      "screener_consolidated": {
-        "url": "...",
-        "category": "financial_documents",
-        "enabled": true
-      },
-      "bse_insider_trading": {
-        "url": "...",
-        "category": "market_shareholding",
-        "enabled": true
-      }
-    },
-    "all_urls": [
-      "..."
-    ]
-  },
   "360ONE": {
     "symbol": "360ONE",
     "discovered_at": "2026-06-25T19:43:36.879915+00:00",

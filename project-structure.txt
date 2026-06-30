@@ -1,4 +1,4 @@
-# tree -a -I '.git|.venv|__pycache__|node_modules|dist|build' > project-structure.txt
+tree -a -I '.git|.venv|__pycache__|node_modules|dist|build' > project-structure.txt
 
 .
 ├── .DS_Store
@@ -47,10 +47,11 @@
 │   ├── registry.py
 │   └── transcript_collector.py
 ├── config
+│   ├── .DS_Store
 │   ├── __init__.py
 │   ├── company_universe.csv
-│   ├── company_universe.yaml
 │   ├── company_urls.json
+│   ├── sector_data_sources.yaml
 │   ├── settings.py
 │   └── sources
 │       ├── ind_NiftyMidSmallcap4005050_list.csv
@@ -109,4 +110,4 @@
 ├── uv.lock
 └── validate_startup.py
 
-28 directories, 80 files
+28 directories, 81 files
