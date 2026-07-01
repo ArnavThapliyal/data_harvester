@@ -16,9 +16,6 @@ COMPANY_UNIVERSE_CSV = CONFIG_DIR / "company_universe.csv"
 COMPANY_METADATA_JSON = CONFIG_DIR / "company_metadata.json"
 COMPANY_URLS_JSON = CONFIG_DIR / "company_urls.json"
 
-# Firecracker configuration
-FIRECRACKER_ROOTFS = None  # Path to pre-built rootfs image
-FIRECRACKER_KERNEL = None  # Path to kernel image
 
 # Ensure all directories are created on import
 for path in [
