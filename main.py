@@ -17,7 +17,6 @@ from typing import List, Optional, Set
 from scripts.url_discovery import generate_constant_urls, main as url_discovery_main
 from scripts.build_universe import build_universe
 from pipeline.pipeline import PipelineRunner
-from tests import dry_run_trace
 from config.settings import COMPANY_UNIVERSE_CSV, COMPANY_URLS_JSON, DONE
 
 # Add project root to path so imports work properly
@@ -264,14 +263,20 @@ def run_harvester_pipeline(
             validate_and_print_summary(universe_symbols)
             
             return
-        
+        else:
+            # Fall through to normal execution mode if we should continue running in a loop or have specified arguments
+            pass
+    
     else:
         # Fall back to original explicit execution mode
         if stages is None:
             stages = ['discover', 'numeric', 'document', 'convert', 'clean', 'chunk', 'normalize']
             
         if symbols is None:
-            symbols = get_available_symbols()
+            # This will be changed to get_company_universe() which returns all valid symbols in universe  
+            logger.warning("No specific symbols provided, using all universe symbols.")
+            # For now, let's use all companies in the universe
+            symbols = get_company_universe()
             
         # Apply limit if specified 
         if limit and limit > 0:
@@ -282,6 +287,31 @@ def run_harvester_pipeline(
                 logger.info(f"Running {stage} stage for {symbol}")
                 
                 run_stage(stage, symbol, overwrite)
+
+
+def check_url_discovery_completed() -> bool:
+    """Check if we can skip URL discovery by looking at existing company_urls.json."""
+    # If company_urls.json doesn't exist, we need to run discovery
+    if not COMPANY_URLS_JSON.exists():
+        return False
+
+    try:
+        import json
+        with open(COMPANY_URLS_JSON, 'r') as f:
+            urls_data = json.load(f)
+            
+        # Get universe symbols
+        universe_symbols = set(get_company_universe())
+        
+        # Check how many are already in the URL discovery data
+        discovered_symbols = set(urls_data.keys())
+        
+        # If we have all companies discovered, skip further discovery
+        return discovered_symbols >= universe_symbols
+        
+    except Exception as e:
+        logger.warning(f"Error checking URL discovery status: {str(e)}")
+        return False
 
 
 def validate_and_retry_url_discovery(symbols: List[str]) -> Set[str]:
@@ -401,77 +431,128 @@ def validate_and_print_summary(symbols: List[str]) -> None:
         print(f"Missing numeric files for symbols: {', '.join(missing_numerics)}")
 
 
-# def run_stage(stage: str, symbol: str, overwrite: bool) -> None:
-#     """Run a specific stage for a symbol."""
+def run_stage(stage: str, symbol: str, overwrite: bool) -> None:
+    """Run a specific stage for a symbol."""
     
-#     stage_dir = Path(f"data/{stage}")
-#     stage_dir.mkdir(parents=True, exist_ok=True)
+    stage_dir = Path(f"data/{stage}")
+    stage_dir.mkdir(parents=True, exist_ok=True)
     
-#     logger.info(f"[{datetime.utcnow().isoformat()}] [START] [{symbol}] {stage} stage")
+    logger.info(f"[{datetime.utcnow().isoformat()}] [START] [{symbol}] {stage} stage")
     
-#     # Define output paths for each stage
-#     output_paths = {
-#         'source': Path('data'),
-#         'discover': Path(f"data/discovered/{symbol}"),
-#         'numeric': Path(f"data/cleaned/numeric/{symbol}.json"),
-#         'document': Path(f"data/cleaned/documents/{symbol}"),
-#         'convert': Path(f"data/trans/documents/{symbol}"),  # For extracted files
-#         'clean': Path(f"data/cleaned/numeric/{symbol}.json"),  # This is where clean output goes 
-#         'chunk': Path(f"data/chunked/{symbol}"),
-#         'normalize': Path(f"data/normalized/{symbol}/{symbol}.json")
-#     }
+    # Define output paths for each stage
+    output_paths = {
+        'source': Path('data'),
+        'discover': Path(f"data/discovered/{symbol}"),
+        'numeric': Path(f"data/cleaned/numeric/{symbol}.json"),
+        'document': Path(f"data/cleaned/documents/{symbol}"),
+        'convert': Path(f"data/trans/documents/{symbol}"),  # For extracted files
+        'clean': Path(f"data/cleaned/numeric/{symbol}.json"),  # This is where clean output goes 
+        'chunk': Path(f"data/chunked/{symbol}"),
+        'normalize': Path(f"data/normalized/{symbol}/{symbol}.json")
+    }
     
-#     output_path = output_paths.get(stage, Path())
+    output_path = output_paths.get(stage, Path())
     
-#     # Check if output exists and skip if not overwriting
-#     if output_path.exists() or (stage in ['numeric', 'document', 'convert', 'clean', 'chunk', 'normalize'] and 
-#                                 output_path.parent.exists() and output_path.parent.glob('*')):
-#         if not overwrite:
-#             logger.info(f"[{datetime.utcnow().isoformat()}] [SKIP] [{symbol}] {stage} stage (output exists)")
-#             return
+    # Check if output exists and skip if not overwriting
+    if output_path.exists() or (stage in ['numeric', 'document', 'convert', 'clean', 'chunk', 'normalize'] and 
+                                output_path.parent.exists() and output_path.parent.glob('*')):
+        if not overwrite:
+            logger.info(f"[{datetime.utcnow().isoformat()}] [SKIP] [{symbol}] {stage} stage (output exists)")
+            return
             
-#     try:
-#         # Execute the appropriate logic for each stage
-#         if stage == 'source':
-#             run_source_stage(symbol)
-#         elif stage == 'discover':
-#             run_discover_stage(symbol)
-#         elif stage == 'numeric':
-#             run_numeric_stage(symbol)
-#         elif stage == 'document':
-#             run_document_stage(symbol)
-#         elif stage == 'convert':
-#             run_convert_stage(symbol)
-#         elif stage == 'clean':
-#             run_clean_stage(symbol)
-#         elif stage == 'chunk':
-#             run_chunk_stage(symbol)
-#         elif stage == 'normalize':
-#             run_normalize_stage(symbol)
+    try:
+        # Execute the appropriate logic for each stage
+        if stage == 'source':
+            run_source_stage(symbol)
+        elif stage == 'discover':
+            run_discover_stage(symbol)
+        elif stage == 'numeric':
+            run_numeric_stage(symbol)
+        elif stage == 'document':
+            run_document_stage(symbol)
+        elif stage == 'convert':
+            run_convert_stage(symbol)
+        elif stage == 'clean':
+            run_clean_stage(symbol)
+        elif stage == 'chunk':
+            run_chunk_stage(symbol)
+        elif stage == 'normalize':
+            run_normalize_stage(symbol)
         
-#         logger.info(f"[{datetime.utcnow().isoformat()}] [DONE] [{symbol}] {stage} stage completed")
+        logger.info(f"[{datetime.utcnow().isoformat()}] [DONE] [{symbol}] {stage} stage completed")
         
-#     except Exception as e:
-#         logger.error(f"[{datetime.utcnow().isoformat()}] [FAIL] [{symbol}] {stage} stage failed: {str(e)}")
-#         raise
+    except Exception as e:
+        logger.error(f"[{datetime.utcnow().isoformat()}] [FAIL] [{symbol}] {stage} stage failed: {str(e)}")
+        raise
 
 
-# def run_source_stage(symbol: str) -> None:
-#     """Run the source stage - builds universe from constituent data."""
-#     # For this implementation, we assume that build_universe.py is already available
-#     from scripts.build_universe import build_universe
+def run_source_stage(symbol: str) -> None:
+    """Run the source stage - builds universe from constituent data."""
+    # For this implementation, we assume that build_universe.py is already available
+    from scripts.build_universe import build_universe
+    
+    # In real implementation, you'd call actual universe building logic  
+    logger.info("Source stage would build universe")
+    pass
 
-#     # In real implementation, you'd call actual universe building logic  
-#     logger.info("Source stage would build universe")
-#     pass
+
+def run_discover_stage(symbol: str) -> None:
+    """Run URL discovery for a symbol."""
+    # This stage would discover URLs from company metadata
+    logger.info(f"Discover stage for {symbol}")
+    # In real implementation, this would call URL discovery functionality
+    pass
 
 
-# def run_discover_stage(symbol: str) -> None:
-#     """Run URL discovery for a symbol."""
-#     # This stage would discover URLs from company metadata
-#     logger.info(f"Discover stage for {symbol}")
-#     # In real implementation, this would call URL discovery functionality
-#     pass
+def check_completion_for_symbol(symbol: str) -> bool:
+    """Check if all required files exist for a symbol."""
+    done_path = DONE / f"{symbol}.md"
+    return done_path.exists()
+
+
+def run_numeric_stage(symbol: str) -> None:
+    """Run numeric data collection (placeholder for now)."""
+    logger.info(f"[Numeric] [{symbol}] processing")
+    # This stage would collect financial data from sources
+    pass
+
+
+def run_document_stage(symbol: str) -> None:
+    """Run document crawling."""
+    logger.info(f"[Document] [{symbol}] processing")
+    # This stage would call the actual document crawler logic
+    # The actual work is delegated to process_single_company in document_crawler.py
+    from Retrieval.Document.document_crawler import run  
+    run(symbol)  # Just calling this to make sure the function actually exists
+    pass
+
+
+def run_convert_stage(symbol: str) -> None:
+    """Run raw data to structured format conversion."""
+    logger.info(f"[Convert] [{symbol}] processing")
+    # This stage would convert downloaded files to structured format 
+    pass
+
+
+def run_clean_stage(symbol: str) -> None:
+    """Run data cleaning."""
+    logger.info(f"[Clean] [{symbol}] processing")
+    # This stage would clean the data
+    pass
+
+
+def run_chunk_stage(symbol: str) -> None:
+    """Run document chunking."""
+    logger.info(f"[Chunk] [{symbol}] processing")
+    # This stage would split documents into chunks
+    pass
+
+
+def run_normalize_stage(symbol: str) -> None:
+    """Run normalization of data."""
+    logger.info(f"[Normalize] [{symbol}] processing")
+    # This stage would normalize the data
+    pass
 
 
 def parse_args() -> argparse.Namespace:
@@ -497,6 +578,7 @@ def parse_args() -> argparse.Namespace:
                        help='Hours between loops (default: 24)')
     parser.add_argument('--refresh-universe', action='store_true',
                        help='Refresh universe even when looping')
+    
     # New arguments for bootstrap workflow
     parser.add_argument('--first-run', action='store_true',
                        help='Initiate the first run bootstrap workflow')
@@ -504,8 +586,7 @@ def parse_args() -> argparse.Namespace:
                        help='Disable loop behavior during first run')
     parser.add_argument('--Retreve_document', action='store_true',
                        help='Include document retrieval step in pipeline') 
-    # parser.add_argument('--sandbox', action='store_true',
-    #                   help='Use Firecracker sandbox for document and normalize stages')
+
     
     return parser.parse_args()
 
@@ -578,7 +659,7 @@ def main() -> None:
                 loop=args.loop,
                 loop_interval_hours=args.loop_interval,
                 refresh_universe=args.refresh_universe,
-                use_sandbox=args.sandbox
+                use_sandbox=False  # args.sandbox is commented out
             )
         except KeyboardInterrupt:
             logger.info("Pipeline interrupted by user")

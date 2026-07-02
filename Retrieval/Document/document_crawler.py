@@ -12,7 +12,7 @@ import time
 import asyncio
 from datetime import UTC, datetime
 from pathlib import Path
-from typing import List, Optional, Dict, Any
+from typing import List, Optional, Dict, Any, Tuple
 from urllib.parse import urlparse, urljoin
 from crawl4ai import AsyncWebCrawler, BrowserConfig, CrawlerRunConfig, CacheMode
 
@@ -34,6 +34,94 @@ PROCESSABLE_EXTENSIONS = {
 OTHER_EXTENSIONS = {
     ".mp3", ".mp4", ".avi", ".mov", ".wav"
 }
+
+def get_file_extension(url: str) -> str:
+    """Extract file extension from URL."""
+    parsed_url = urlparse(url)
+    path = parsed_url.path
+    if not path:
+        return ""
+    return os.path.splitext(path)[1].lower()
+
+def is_url_downloadable(url: str) -> bool:
+    """Check if a URL points to a downloadable file."""
+    # Check if it's an actual downloadable file based on extension
+    ext = get_file_extension(url)
+    
+    # If no extension, check content type
+    if not ext:
+        return False
+        
+    return ext in PROCESSABLE_EXTENSIONS or ext in OTHER_EXTENSIONS
+
+def sanitize_filename(url: str) -> str:
+    """Safely convert URL to a filename."""
+    parsed_url = urlparse(url)
+    path = parsed_url.path
+    
+    # Replace problematic characters with underscores
+    filename = os.path.basename(path)
+    
+    # If no basename, try to use the URL as-is but sanitize it
+    if not filename or filename == '/':
+        filename = url.replace("http://", "").replace("https://", "").replace("/", "_")
+        
+    # Sanitize filename characters  
+    sanitized = "".join(c for c in filename if c.isalnum() or c in "._- ")
+    
+    # If the result is empty, use a default name
+    return sanitized if sanitized else f"file_{int(time.time())}"
+
+def determine_download_destination(url: str, symbol: str) -> Tuple[str, Path]:
+    """Determine download directory based on URL extension."""
+    ext = get_file_extension(url)
+    
+    # Check if it's a directly downloadable file or needs to be skipped
+    if not is_url_downloadable(url):
+        return "skip", RAW_DOCUMENTS / symbol
+
+    if ext in PROCESSABLE_EXTENSIONS:
+        return "processable", RAW_DOCUMENTS / symbol
+    elif ext in OTHER_EXTENSIONS:
+        return "other", RAW_DOCUMENTS_OTHER / symbol
+    else:
+        # Default to processable for unknown extensions
+        return "processable", RAW_DOCUMENTS / symbol 
+
+def download_file(url: str, dest_path: Path, symbol: str) -> Tuple[bool, Optional[str], Optional[Path]]:
+    """Download file from URL and save to destination."""
+    try:
+        # Add a timeout and headers for better downloads
+        headers = {
+            'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36'
+        }
+        
+        response = httpx.get(url, follow_redirects=True, timeout=30.0, headers=headers)
+        response.raise_for_status()
+        
+        # Write to file
+        with open(dest_path, 'wb') as f:
+            f.write(response.content)
+            
+        logger.debug(f"[DocumentCrawler] [{symbol}] downloaded: {dest_path.name}")
+        return True, None, dest_path
+        
+    except Exception as e:
+        logger.warning(f"[DocumentCrawler] [{symbol}] failed to download {url}: {e}")
+        return False, str(e), None
+
+def create_manifest(symbol: str, source_urls: List[str], crawler_used: str, 
+                   links_found: int, downloaded_files: List[Dict]) -> Dict[str, Any]:
+    """Create manifest file with metadata about the crawling process."""
+    return {
+        "symbol": symbol,
+        "source_urls": source_urls,
+        "crawler_used": crawler_used,
+        "links_found": links_found,
+        "downloaded_files": downloaded_files,
+        "timestamp": datetime.now(UTC).isoformat(),
+        "status": "completed"
+    }
 
 def run(symbol: str) -> dict:
     """Sync entry point for pipeline.py — wraps the async implementation."""
@@ -151,7 +239,7 @@ async def process_single_company(symbol: str, urls: List[str], overwrite: bool =
     files_ok = sum(1 for f in all_downloaded if f["success"])
     logger.info(f"[DocumentCrawler] [{symbol}] done — status={status}, downloaded={files_ok}/{len(all_downloaded)}")
     return {"status": status, "files_downloaded": files_ok}
-                                                                                                                                                                                                                                                                                                       
+
 def main():
     """Main entry point for document crawler."""
     parser = argparse.ArgumentParser(description="Download documents from company URLs")
