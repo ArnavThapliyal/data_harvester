@@ -17,7 +17,7 @@ from FlagEmbedding import BGEM3FlagModel
 import torch # (device select); 
 import hashlib
 
-model = SentenceTransformer("BAAI/bge-m3")
+model = SentenceTransformer("BAAI/bge-m3", device="mps") # for macos load the m5 chipsd GPU cores 
 
 vectors = model.encode(chunks)
 
