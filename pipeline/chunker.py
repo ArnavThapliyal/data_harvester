@@ -6,6 +6,11 @@ import json
 from pathlib import Path
 from typing import List, Dict, Any
 import logging
+import re, hashlib # for text normalization and hashing
+from transformers import AutoTokenizer
+# optional langchain-text-splitters (MarkdownHeaderTextSplitter, RecursiveCharacterTextSplitter)
+import MarkdownHeaderTextSplitter, RecursiveCharacterTextSplitter
+
 
 # Configure logging
 logger = logging.getLogger(__name__)

@@ -7,6 +7,9 @@ from pathlib import Path
 from typing import List, Dict, Any
 import logging
 import hashlib
+import yaml # pyyaml for YAML parsing
+import datetime
+import re # doc type matching 
 
 # Configure logging
 logger = logging.getLogger(__name__)
