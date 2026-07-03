@@ -635,7 +635,7 @@ def main() -> None:
             
         try:
             run_harvester_pipeline(
-                symbols=None,
+                symbols=get_company_universe(),
                 stages=None,
                 overwrite=False,
                 limit=None,
