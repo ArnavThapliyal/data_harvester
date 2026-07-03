@@ -88,27 +88,51 @@ def determine_download_destination(url: str, symbol: str) -> Tuple[str, Path]:
         # Default to processable for unknown extensions
         return "processable", RAW_DOCUMENTS / symbol 
 
-def download_file(url: str, dest_path: Path, symbol: str) -> Tuple[bool, Optional[str], Optional[Path]]:
+async def download_file(url: str, dest_path: Path, symbol: str) -> Tuple[bool, Optional[str], Optional[Path]]:
     """Download file from URL and save to destination."""
-    try:
-        # Add a timeout and headers for better downloads
-        headers = {
-            'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36'
-        }
-        
-        response = httpx.get(url, follow_redirects=True, timeout=30.0, headers=headers)
-        response.raise_for_status()
-        
-        # Write to file
-        with open(dest_path, 'wb') as f:
-            f.write(response.content)
+    for attempt in range(3):  # Maximum 3 attempts
+        try:
+            # Add a timeout and headers for better downloads
+            headers = {
+                'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36'
+            }
             
-        logger.debug(f"[DocumentCrawler] [{symbol}] downloaded: {dest_path.name}")
-        return True, None, dest_path
-        
-    except Exception as e:
-        logger.warning(f"[DocumentCrawler] [{symbol}] failed to download {url}: {e}")
-        return False, str(e), None
+            async with httpx.AsyncClient() as client:
+                response = await client.get(url, follow_redirects=True, timeout=30.0, headers=headers)
+                response.raise_for_status()
+                
+                # Write to file
+                with open(dest_path, 'wb') as f:
+                    f.write(response.content)
+                    
+                logger.debug(f"[DocumentCrawler] [{symbol}] downloaded: {dest_path.name}")
+                return True, None, dest_path
+                
+        except httpx.HTTPStatusError as e:
+            if e.response.status_code in (429, 503):
+                retry_after = e.response.headers.get('Retry-After')
+                if retry_after:
+                    # Parse Retry-After header
+                    try:
+                        wait_time = int(retry_after)
+                    except ValueError:
+                        wait_time = 2  # Default to 2s if parsing fails
+                else:
+                    # Exponential backoff: 2s, 4s, 8s
+                    wait_time = 2 ** attempt
+                    
+                logger.warning(f"[DocumentCrawler] [{symbol}] rate limited for {url}, retrying in {wait_time}s")
+                await asyncio.sleep(wait_time)
+            else:
+                logger.warning(f"[DocumentCrawler] [{symbol}] failed to download {url}: {e}")
+                return False, str(e), None
+        except Exception as e:
+            logger.warning(f"[DocumentCrawler] [{symbol}] unexpected error downloading {url}: {e}")
+            return False, str(e), None
+    
+    # If we get here, all 3 attempts failed
+    logger.error(f"[DocumentCrawler] [{symbol}] failed after retries: {url}")
+    return False, "Rate limited/Failed after retries", None
 
 def create_manifest(symbol: str, source_urls: List[str], crawler_used: str, 
                    links_found: int, downloaded_files: List[Dict]) -> Dict[str, Any]:
@@ -190,6 +214,19 @@ async def process_single_company(symbol: str, urls: List[str], overwrite: bool =
             logger.info(f"[DocumentCrawler] [{symbol}] {len(hrefs)} links found on {url}")
 
             for href in hrefs:
+                # Apply per-domain pacing before downloading
+                parsed_url = urlparse(href)
+                domain = parsed_url.netloc.lower()
+                
+                if 'nseindia.com' in domain:
+                    await asyncio.sleep(2.0)
+                elif 'bseindia.com' in domain:
+                    await asyncio.sleep(1.5)
+                elif 'screener.in' in domain:
+                    await asyncio.sleep(1.0)
+                else:
+                    await asyncio.sleep(1.0)
+                    
                 doc_type, dest_dir = determine_download_destination(href, symbol)
                 if doc_type == "skip":
                     continue
@@ -201,7 +238,7 @@ async def process_single_company(symbol: str, urls: List[str], overwrite: bool =
                     logger.debug(f"[DocumentCrawler] [{symbol}] already exists, skipping: {filename}")
                     continue
 
-                success, error, final_path = download_file(href, dest_path, symbol)
+                success, error, final_path = await download_file(href, dest_path, symbol)
                 all_downloaded.append({
                     "url": href,
                     "file": str(final_path) if final_path else None,
