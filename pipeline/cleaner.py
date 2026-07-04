@@ -8,7 +8,7 @@ import unicodedata
 from pathlib import Path
 from typing import List, Dict, Any
 import logging
-import collections.Counter
+from collections import Counter
 
 # Configure logging
 logger = logging.getLogger(__name__)

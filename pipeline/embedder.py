@@ -11,7 +11,7 @@ from pathlib import Path
 from typing import List, Dict, Any
 import logging
 import numpy as np
-from sentence_transformers import SentenceTransformer, specifically # for bge-m3, 
+from sentence_transformers import SentenceTransformer # for bge-m3, 
 from FlagEmbedding import BGEM3FlagModel
 # (BAAI's own lib exposes dense/sparse/colbert modes generic wrappers may not); 
 import torch # (device select); 

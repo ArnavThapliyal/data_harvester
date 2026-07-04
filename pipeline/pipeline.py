@@ -80,7 +80,7 @@ class PipelineRunner:
         logger.info(f"Starting pipeline for {len(symbols)} symbols")
         
         # Load necessary dependencies for stages that are explicitly mentioned
-        from Retrieval.Document.document_crawler import process_single_company
+        from pipeline.Retrieval.Document.document_crawler import process_single_company
         
         try:
             for symbol in symbols:
@@ -116,7 +116,7 @@ class PipelineRunner:
             # This would typically call process_single_company with proper arguments
             # But for now we'll use a placeholder approach - actual implementation will be done by the function
             # Let's import it and make sure it can be called successfully
-            from Retrieval.Document.document_crawler import run
+            from pipeline.Retrieval.Document.document_crawler import run
             result = run(symbol)
             logger.info(f"[DocumentCrawler] [{symbol}] completed: {result}")
         except Exception as e:

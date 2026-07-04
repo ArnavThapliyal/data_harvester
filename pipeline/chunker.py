@@ -9,8 +9,7 @@ import logging
 import re, hashlib # for text normalization and hashing
 from transformers import AutoTokenizer
 # optional langchain-text-splitters (MarkdownHeaderTextSplitter, RecursiveCharacterTextSplitter)
-import MarkdownHeaderTextSplitter, RecursiveCharacterTextSplitter
-
+from langchain_text_splitters import MarkdownHeaderTextSplitter, RecursiveCharacterTextSplitter
 
 # Configure logging
 logger = logging.getLogger(__name__)

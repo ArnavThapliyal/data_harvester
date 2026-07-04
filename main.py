@@ -12,10 +12,9 @@ import csv
 import json
 from pathlib import Path
 from datetime import datetime, timedelta
-from typing import List, Optional, Set
+from typing import List, Optional, Set, Any
 
-from scripts.url_discovery import generate_constant_urls, main as url_discovery_main
-from scripts.build_universe import build_universe
+from scripts.url_discovery import main as url_discovery_main
 from pipeline.pipeline import PipelineRunner
 from config.settings import COMPANY_UNIVERSE_CSV, COMPANY_URLS_JSON, DONE
 
@@ -241,9 +240,9 @@ def run_harvester_pipeline(
                 logger.info(f"Retrying URL discovery for {len(universe_symbols) - len(valid_symbols)} incomplete symbols...")
                 
                 # Create a temporary CSV with only the missing symbols to be discovered again
-                retry_symbols = list(universe_symbols - valid_symbols)
+                retry_symbols = list(set(universe_symbols) - valid_symbols)
                 run_url_discovery_for_symbols(retry_symbols)
-        else:
+        else:  
             logger.info("URL discovery already completed, skipping.")
         
         # Run pipeline processing with all universe companies from company_urls.json
@@ -522,9 +521,8 @@ def run_document_stage(symbol: str) -> None:
     logger.info(f"[Document] [{symbol}] processing")
     # This stage would call the actual document crawler logic
     # The actual work is delegated to process_single_company in document_crawler.py
-    from Retrieval.Document.document_crawler import run  
-    run(symbol)  # Just calling this to make sure the function actually exists
-    pass
+    from pipeline.Retrieval.Document.document_crawler import process_single_company  
+    process_single_company(symbol, urls=[], overwrite=False)  # Just calling this to make sure the function actually exists
 
 
 def run_convert_stage(symbol: str) -> None:

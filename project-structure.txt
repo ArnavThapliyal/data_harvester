@@ -1,6 +1,6 @@
-tree -a -I '.git|.venv|__pycache__|node_modules|dist|build|data' > project-structure.txt
 .
 ├── .DS_Store
+├── .cursorignore
 ├── .env
 ├── .gitignore
 ├── .python-version
@@ -28,23 +28,6 @@ tree -a -I '.git|.venv|__pycache__|node_modules|dist|build|data' > project-struc
 │   ├── populated
 │   └── startup_validation_report.txt
 ├── README.md
-├── Retrieval
-│   ├── .DS_Store
-│   ├── Document
-│   │   ├── __init__.py
-│   │   └── document_crawler.py
-│   ├── Numeric
-│   │   ├── __init__.py
-│   │   ├── base_numeric_collector.py
-│   │   ├── bsc_collector.py
-│   │   ├── bse_collector.py
-│   │   ├── indiaapi_collector.py
-│   │   ├── nse_collector.py
-│   │   ├── screener_collector.py
-│   │   └── yfinance_collector.py
-│   ├── __init__.py
-│   ├── registry.py
-│   └── transcript_collector.py
 ├── config
 │   ├── .DS_Store
 │   ├── __init__.py
@@ -65,11 +48,10 @@ tree -a -I '.git|.venv|__pycache__|node_modules|dist|build|data' > project-struc
 │   ├── done
 │   ├── pipeline.log
 │   ├── raw
+│   │   ├── .DS_Store
 │   │   ├── 360ONE.json
 │   │   ├── 3MINDIA.json
 │   │   ├── bse
-│   │   ├── documents
-│   │   │   └── other
 │   │   ├── manifest.json
 │   │   ├── nse
 │   │   ├── numeric
@@ -80,6 +62,23 @@ tree -a -I '.git|.venv|__pycache__|node_modules|dist|build|data' > project-struc
 ├── live_smoke_test_plan.txt
 ├── main.py
 ├── pipeline
+│   ├── Retrieval
+│   │   ├── .DS_Store
+│   │   ├── Document
+│   │   │   ├── __init__.py
+│   │   │   └── document_crawler.py
+│   │   ├── Numeric
+│   │   │   ├── __init__.py
+│   │   │   ├── base_numeric_collector.py
+│   │   │   ├── bsc_collector.py
+│   │   │   ├── bse_collector.py
+│   │   │   ├── indiaapi_collector.py
+│   │   │   ├── nse_collector.py
+│   │   │   ├── screener_collector.py
+│   │   │   └── yfinance_collector.py
+│   │   ├── __init__.py
+│   │   ├── registry.py
+│   │   └── transcript_collector.py
 │   ├── __init__.py
 │   ├── chunker.py
 │   ├── cleaner.py
@@ -90,6 +89,7 @@ tree -a -I '.git|.venv|__pycache__|node_modules|dist|build|data' > project-struc
 │   ├── type_router.py
 │   ├── utils.py
 │   └── vector_store.py
+├── pipeline.py
 ├── project-structure.txt
 ├── pyproject.toml
 ├── scripts
@@ -109,4 +109,4 @@ tree -a -I '.git|.venv|__pycache__|node_modules|dist|build|data' > project-struc
 ├── uv.lock
 └── validate_startup.py
 
-28 directories, 81 files
+26 directories, 84 files

@@ -5,16 +5,15 @@ import os
 import sys
 import datetime
 from pathlib import Path
-
+from typing import Any
 import pandas as pd
-
 
 # Setup basic logging
 logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(message)s')
 logger = logging.getLogger(__name__)
 
 
-def load_universe(csv_path: Path) -> list[dict]:
+def load_universe(csv_path: Path) -> list[dict[str, Any]]:
     """Load company universe from CSV and filter out invalid BSE codes."""
     try:
         df = pd.read_csv(csv_path)
@@ -76,7 +75,7 @@ def load_universe(csv_path: Path) -> list[dict]:
     return universe
 
 
-def build_source_urls(symbol: str, bse_code: str) -> dict:
+def build_source_urls(symbol: str, bse_code: str) -> dict[str, Any]:
     """Generate source URLs for a given symbol and BSE code."""
     return {
         "bse_filings": {
@@ -107,7 +106,7 @@ def build_source_urls(symbol: str, bse_code: str) -> dict:
     }
 
 
-def discover_urls_for_symbol(company: dict) -> dict:
+def discover_urls_for_symbol(company: dict[str, Any]) -> dict[str, Any]:
     """Discover URLs for a single company symbol."""
     symbol = company["symbol"]
     bse_code = company["bse_code"]
@@ -132,7 +131,7 @@ def discover_urls_for_symbol(company: dict) -> dict:
     }
 
 
-def load_existing_urls(json_path: Path) -> dict:
+def load_existing_urls(json_path: Path) -> dict[str, Any]:
     """Load existing URLs from JSON file."""
     if not json_path.exists():
         return {}
@@ -146,7 +145,7 @@ def load_existing_urls(json_path: Path) -> dict:
         return {}
 
 
-def write_urls_atomic(data: dict, json_path: Path) -> None:
+def write_urls_atomic(data: dict[str, Any], json_path: Path) -> None:
     """Atomically write URLs to JSON file."""
     tmp_path = json_path.with_suffix(json_path.suffix + '.tmp')
     try:
