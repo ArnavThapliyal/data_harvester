@@ -1,0 +1,14 @@
+rules:
+  - pattern: "Form\\s*1A"
+    type: sebi_self_disclosure
+
+  - pattern: "Form\\s*2\\.1"
+    type: sebi_impact_report
+
+  - pattern: "Integrated\\s+Annual\\s+Report"
+    type: integrated_annual_report
+
+  - pattern: "Business\\s+Responsibility\\s+and\\s+Sustainability\\s+Report"
+    type: brsr
+
+fallback: unknown_filing

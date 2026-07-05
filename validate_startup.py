@@ -8,6 +8,8 @@ import sys
 import logging
 import importlib.util
 from pathlib import Path
+from pipeline.Retrieval.registry import get_collectors, get_collector
+
 
 # Setup logging to capture startup info
 logging.basicConfig(
@@ -40,7 +42,7 @@ def main():
           # Since we can't actually import main.py directly due to its structure, let's test key modules
           
           # Test retrieval imports  
-          from Retrieval import registry
+          
           startup_log.append("✓ Retrieval.registry imported successfully")
           
           # Test specific collectors - use try/except for each to capture failures individually
@@ -53,10 +55,10 @@ def main():
           
           for module_path, class_name in collector_modules:
                try:
-               module = importlib.import_module(module_path)
-               startup_log.append(f"✓ {class_name} imported successfully from {module_path}")
+                    module = importlib.import_module(module_path)
+                    startup_log.append(f"✓ {class_name} imported successfully from {module_path}")
                except Exception as e:
-               startup_log.append(f"⚠ Failed to import {class_name} from {module_path}: {e}")
+                    startup_log.append(f"⚠ Failed to import {class_name} from {module_path}: {e}")
 
           # Test pipeline components
           pipeline_modules = [
@@ -68,24 +70,24 @@ def main():
           ]
           
           for module_path, class_names in pipeline_modules:
-          try:
-               module = importlib.import_module(module_path)
-               startup_log.append(f"✓ {class_names} imported successfully from {module_path}")
+               try:
+                    module = importlib.import_module(module_path)
+                    startup_log.append(f"✓ {class_names} imported successfully from {module_path}")
                except Exception as e:
-               startup_log.append(f"⚠ Failed to import from {module_path}: {e}")
+                    startup_log.append(f"⚠ Failed to import from {module_path}: {e}")
 
           # Test registry functionality if possible without execution
           try:
-               from Retrieval.registry import get_collectors, get_collector
+               
                collectors = get_collectors()
                startup_log.append(f"✓ Retrieved {len(collectors)} collector classes from registry")
                
                # Try accessing some specific collectors to make sure they load properly
                try:
-               yf_cls = get_collector('yfinance')
-               startup_log.append("✓ Successfully retrieved yfinance collector")
+                    yf_cls = get_collector('yfinance')
+                    startup_log.append("✓ Successfully retrieved yfinance collector")
                except Exception as e:
-               startup_log.append(f"⚠ Failed to retrieve yfinance collector: {e}")
+                    startup_log.append(f"⚠ Failed to retrieve yfinance collector: {e}")
                
           except Exception as e:
                startup_log.append(f"⚠ Failed to access registry: {e}")
@@ -96,39 +98,39 @@ def main():
           missing_env_vars = []
           for var in required_env_vars:
                if not os.getenv(var):
-               missing_env_vars.append(var)
+                    missing_env_vars.append(var)
                startup_log.append(f"⚠ Environment variable {var} is not set")
           
           if missing_env_vars:
-          startup_log.append(f"Missing environment variables: {', '.join(missing_env_vars)}")
+               startup_log.append(f"Missing environment variables: {', '.join(missing_env_vars)}")
           else:
-          startup_log.append("✓ All required environment variables are present")
+               startup_log.append("✓ All required environment variables are present")
 
           # Check dependencies
           startup_log.append("Checking key dependencies...")
           key_packages = ['yfinance', 'pandas', 'httpx']
           missing_deps = []
           for pkg in key_packages:
-          try:
-               importlib.import_module(pkg)
-               startup_log.append(f"✓ {pkg} dependency available")
-          except ImportError:
-               missing_deps.append(pkg)
-               startup_log.append(f"✗ Missing dependency: {pkg}")
+               try:
+                    importlib.import_module(pkg)
+                    startup_log.append(f"✓ {pkg} dependency available")
+               except ImportError:
+                    missing_deps.append(pkg)
+                    startup_log.append(f"✗ Missing dependency: {pkg}")
 
           if missing_deps:
-          startup_log.append(f"Missing dependencies: {', '.join(missing_deps)}")
+               startup_log.append(f"Missing dependencies: {', '.join(missing_deps)}")
 
           # Summary
           print("\n=== VALIDATION SUMMARY ===")
           for log_msg in startup_log:
-          print(log_msg)
+               print(log_msg)
           
           # Write everything to report file  
           with open('startup_validation_report.txt', 'w') as f:
-          f.write("=== STARTUP VALIDATION REPORT ===\n")
-          f.write(f"Execution time: {importlib.import_module('datetime').datetime.now().isoformat()}\n\n")
-          f.write("=== STARTUP LOG ===\n")
+               f.write("=== STARTUP VALIDATION REPORT ===\n")
+               f.write(f"Execution time: {importlib.import_module('datetime').datetime.now().isoformat()}\n\n")
+               f.write("=== STARTUP LOG ===\n")
           for log_msg in startup_log:
                f.write(log_msg + "\n")
                
@@ -169,13 +171,13 @@ def main():
           
           # Write error report
           with open('startup_validation_report.txt', 'w') as f:
-          f.write("=== STARTUP VALIDATION REPORT ===\n")
-          f.write(f"Execution time: {importlib.import_module('datetime').datetime.now().isoformat()}\n\n")
-          f.write("=== ERROR ENCOUNTERED ===\n")
-          f.write(f"Error during validation: {e}\n")
-          f.write(f"Exception type: {type(e).__name__}\n")
-          f.write("Traceback:\n")
-          f.write(traceback.format_exc())
+               f.write("=== STARTUP VALIDATION REPORT ===\n")
+               f.write(f"Execution time: {importlib.import_module('datetime').datetime.now().isoformat()}\n\n")
+               f.write("=== ERROR ENCOUNTERED ===\n")
+               f.write(f"Error during validation: {e}\n")
+               f.write(f"Exception type: {type(e).__name__}\n")
+               f.write("Traceback:\n")
+               f.write(traceback.format_exc())
           
           print("\nError report saved to startup_validation_report.txt") 
           return 1
