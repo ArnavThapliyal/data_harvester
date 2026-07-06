@@ -28,13 +28,15 @@ logger = logging.getLogger(__name__)
 from pipeline.type_router import route_file
 
 class Parser:
-    def __init__(self):
-        # Initialize the document converter with appropriate settings
-        self.converter = DocumentConverter()
-        
-        # Read config settings (this would come from config/settings.py in a real implementation)
-        self.compute_budget = self._load_compute_budget()
-        
+    def __init__(self, compute_budget: dict = None):
+        self.compute_budget = compute_budget or self._load_compute_budget()
+        pdf_options = PdfPipelineOptions()
+        if self.compute_budget.get("enable_ml_ocr"):
+            pdf_options.ocr_options = EasyOcrOptions(lang=["en", "hi"] if self.compute_budget.get("enable_hindi_translation") else ["en"])
+        # built ONCE — rebuilding per file reloads OCR models every time
+        from docling.datamodel.pipeline_options import PdfFormatOption
+        self.converter = DocumentConverter(format_options={InputFormat.PDF: PdfFormatOption(pipeline_options=pdf_options)})
+  
     def _load_compute_budget(self) -> Dict[str, Any]:
         """Load compute budget settings from configuration"""
         # This is a placeholder based on your specification
@@ -44,9 +46,8 @@ class Parser:
             'max_pages_for_ocr': 10,
             'enable_hindi_translation': False
         }
-        
-    def parse(self, file_path: str, scratch_dir: pathlib.Path) -> List[Dict[str, Any]]:
-        """
+
+    """
         Main parsing function that follows the workflow:
         1. Ingest and setup
         2. Execute parsing with layout-aware engine 
@@ -59,27 +60,40 @@ class Parser:
             
         Returns:
             List[Dict[str, Any]]: List of IR blocks
-        """
-        # Step 1: Ingestion and Setup
-        logger.info(f"Starting parsing of {file_path}")
+        """        
+    def run(self, file_path: str, scratch_dir: pathlib.Path = None) -> list[dict]:
+        # For now just return a basic placeholder - the parser interface should be implemented  
+        # This function would actually use docling to parse documents according to your 
+        # spec and would return structured IR blocks
         
-        # Initialize engine with configured settings
-        engine_settings = self._configure_engine()
-        
-        # Step 2: Format routing - hand off to layout-aware engine
+        if not os.path.exists(file_path):
+            raise FileNotFoundError(f"Input file not found: {file_path}")
+            
         try:
-            # Use docling engine for native format recognition
-            document = self.converter.convert(file_path)
-            
-            # Step 3: Layout traversal and sequential iteration
-            ir_blocks = self._translate_document_to_ir(document, file_path)
-            
-            logger.info(f"Successfully parsed {file_path} into {len(ir_blocks)} blocks")
-            return ir_blocks
+            result = self.converter.convert(file_path)
+            doc = result.document
+            blocks = []
+            for item, level in doc.iterate_items():
+                try:
+                    page_no = item.prov[0].page_no if getattr(item, "prov", None) else None
+                    if hasattr(item, 'table') and item.table:
+                        # Assuming table items have export_to_dataframe method
+                        md = item.export_to_dataframe(doc=doc).to_markdown(index=False)
+                        blocks.append({"type": "table", "content": md, "page_number": page_no})
+                    elif hasattr(item, 'header'):
+                        blocks.append({"type": "header", "content": item.text, "hierarchical_level": item.level, "page_number": page_no})
+                    elif hasattr(item, 'list_item'):
+                        blocks.append({"type": "list_item", "content": item.text, "page_number": page_no})
+                    elif hasattr(item, 'text'):
+                        blocks.append({"type": "paragraph", "content": item.text, "page_number": page_no})
+                except Exception as e:
+                    logger.warning(f"skipping bad item: {e}")  # per-item, doesn't drop the whole doc
+                    continue
+            return blocks
             
         except Exception as e:
-            logger.error(f"Error parsing {file_path}: {e}")
-            return []
+            logger.error(f"Failed to parse document: {e}")
+            raise
 
     def _configure_engine(self) -> Dict[str, Any]:
         """Configure the underlying conversion engine with OCR settings"""
@@ -314,5 +328,5 @@ class Parser:
 def parse_file(file_path: str, scratch_dir: pathlib.Path) -> List[Dict[str, Any]]:
     """Convenience function to parse a single file"""
     parser = Parser()
-    return parser.parse(file_path, scratch_dir)
+    return parser.run(file_path, scratch_dir)
 

@@ -1,5 +1,8 @@
+uv run python main.py --all_symbols --no-loop --Retreve_document --first-run
+
 lnav ~/.ollama/logs/server.log
 tree -a -I '.git|.venv|__pycache__|node_modules|dist|build|data' > project-structure.txt
+
 ├── data
 │   ├── .DS_Store
 │   ├── chunked

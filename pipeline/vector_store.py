@@ -124,7 +124,7 @@ def upsert_chunks(chunks: List[Dict[str, Any]]) -> int:
                     chunk['page_range'], chunk['chunk_text'], chunk['vector'],
                     chunk['downloaded_at'], chunk['content_hash']
                 ))
-                
+            
             inserted_count += 1
             
         except Exception as e:
@@ -224,10 +224,38 @@ def compact_database():
     finally:
         conn.close()
 
-def main():
-    """
-    Sample usage example. This would typically be called by the main pipeline after embedding.
-    """
+class VectorStore:
+    """Vector store that handles storage and retrieval of embedded chunks"""
+    
+    def __init__(self, table_name: str = "company_documents"):
+        self.table_name = table_name
+    
+    def run(self, symbol: str) -> None:
+        """
+        Run vector store operations for a symbol.
+        
+        Args:
+            symbol: Company ticker symbol
+        """
+        # This is where you'd implement actual vector store logic with the data that was embedded
+        print(f"[VectorStore] Processing symbol {symbol}")
+        # In the complete implementation, this would:
+        # 1. Load embedded chunks 
+        # 2. Connect to/initialize vector database (LanceDB)
+        # 3. Insert chunks into database
+        # 4. Handle queries and retrieval 
+        pass
+    
+    def upsert(self, chunks: List[Dict[str, Any]]) -> int:
+        """Upsert chunks into the vector store"""
+        return upsert_chunks(chunks)
+    
+    def get_by_symbol(self, symbol: str) -> List[Dict[str, Any]]:
+        """Get all chunks for a specific symbol"""
+        return get_chunks_by_symbol(symbol)
+
+# For testing purposes
+if __name__ == "__main__":
     # Test with sample data
     test_chunks = [
         {
@@ -246,6 +274,3 @@ def main():
     print("Uploading test data to vector store...")
     count = upsert_chunks(test_chunks)
     print(f"Uploaded {count} chunks")
-
-if __name__ == "__main__":
-    main()

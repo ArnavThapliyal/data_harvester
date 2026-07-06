@@ -36,10 +36,10 @@ from pipeline.normalizer import Normalizer
 from pipeline.embedder import Embedder
 
 # [MISSING] uncomment as each is built, in your stated order:
-# from pipeline.type_router import TypeRouter
-# from pipeline.parser import Parser
-# from pipeline.vector_store import VectorStore
-# from Retrieval.registry import get_collector
+from pipeline.type_router import TypeRouter
+from pipeline.parser import Parser
+from pipeline.vector_store import VectorStore
+from Retrieval.registry import get_collector
 
 # Configure logging
 logger = logging.getLogger(__name__)
@@ -65,10 +65,10 @@ class PipelineRunner:
         self.embedder = Embedder()
         
         # [MISSING] uncomment once each module exists
-        # self.document_crawler = get_collector("document")
-        # self.type_router = TypeRouter()
-        # self.parser = Parser()
-        # self.vector_store = VectorStore(table_name="company_documents")
+        self.document_crawler = get_collector("document")
+        self.type_router = TypeRouter()
+        self.parser = Parser()
+        self.vector_store = VectorStore(table_name="company_documents")
 
     def run(self, symbols: List[str]) -> None:
         """
@@ -90,9 +90,10 @@ class PipelineRunner:
                 
                 logger.info(f"[Pipeline] [{symbol}] starting")
                 
-                # Execute stages in the specified order: document_crawler.py -> parser.py -> cleaner.py -> chunker.py -> embedder.py -> vector_store.py
+                # Execute stages in the specified order: document_crawler.py -> type_router.py -> parser.py -> cleaner.py -> chunker.py -> embedder.py -> vector_store.py
                 self._run_document_crawler(symbol, process_single_company)
-                self._run_parser(symbol) 
+                self._run_type_router(symbol) 
+                self._run_parser(symbol)
                 self._run_cleaner(symbol)
                 self._run_chunker(symbol)
                 self._run_embedder(symbol)
@@ -123,6 +124,19 @@ class PipelineRunner:
             logger.error(f"[DocumentCrawler] [{symbol}] failed: {str(e)}")
             raise
 
+    def _run_type_router(self, symbol: str) -> None:
+        """Run type router stage."""
+        logger.info(f"[TypeRouter] [{symbol}] starting")
+        try:
+            # [CONFIRM] this import should be adjusted when the type_router.py exists
+            from pipeline.type_router import route_file
+            route_file(symbol)
+            logger.info(f"[TypeRouter] [{symbol}] completed")
+        except Exception as e:
+            logger.warning(f"[TypeRouter] [{symbol}] failed: {str(e)}")
+            # [MISSING] - this is a placeholder, module doesn't exist yet
+            logger.info(f"[TypeRouter] [{symbol}] status: skipped")
+
     def _run_parser(self, symbol: str) -> None:
         """Run parser stage."""
         logger.info(f"[Parser] [{symbol}] starting")
@@ -133,7 +147,7 @@ class PipelineRunner:
             parser.run(symbol)
             logger.info(f"[Parser] [{symbol}] completed")
         except Exception as e:
-            logger.warning(f"[Parser] [{symbol}] failed (module not built yet): {str(e)}")
+            logger.warning(f"[Parser] [{symbol}] failed: {str(e)}")
             # [MISSING] - this is a placeholder, module doesn't exist yet
             logger.info(f"[Parser] [{symbol}] status: skipped")
 
@@ -179,7 +193,7 @@ class PipelineRunner:
             vector_store.run(symbol)
             logger.info(f"[VectorStore] [{symbol}] completed")
         except Exception as e:
-            logger.warning(f"[VectorStore] [{symbol}] failed (module not built yet): {str(e)}")
+            logger.warning(f"[VectorStore] [{symbol}] failed: {str(e)}")
             # [MISSING] - this is a placeholder, module doesn't exist yet
             logger.info(f"[VectorStore] [{symbol}] status: skipped")
 

@@ -2,12 +2,14 @@ from .Numeric.yfinance_collector import YFinanceCollector
 from .Numeric.nse_collector import NSECollector
 from .Numeric.bsc_collector import BSCCollector
 from .Numeric.screener_collector import ScreenerCollector
+from .Numeric.indiaapi_collector import IndiaAPICollector
 
 COLLECTOR_REGISTRY = {
     "yfinance": YFinanceCollector,
     "nse": NSECollector,
     "bsc": BSCCollector,
     "screener": ScreenerCollector,
+    "indiaapi": IndiaAPICollector,
 }
 
 def get_collector(source_name: str, **kwargs):
