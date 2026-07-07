@@ -800,6 +800,7 @@ dependencies = [
     { name = "pyyaml" },
     { name = "sentence-transformers" },
     { name = "tenacity" },
+    { name = "torch" },
     { name = "yfinance" },
 ]
 
@@ -841,6 +842,7 @@ requires-dist = [
     { name = "ruff", marker = "extra == 'dev'", specifier = ">=0.15.15" },
     { name = "sentence-transformers", specifier = ">=5.6.0" },
     { name = "tenacity", specifier = ">=9.1.4" },
+    { name = "torch", specifier = ">=2.12.1" },
     { name = "yfinance", specifier = ">=1.4.1" },
 ]
 provides-extras = ["dev"]

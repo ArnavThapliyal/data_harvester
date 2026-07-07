@@ -10,13 +10,16 @@ import time
 import subprocess
 import csv
 import json
+import pandas as pd
+
 from pathlib import Path
 from datetime import datetime, timedelta
 from typing import List, Optional, Set, Any
-
 from scripts.url_discovery import main as url_discovery_main
 from pipeline.pipeline import PipelineRunner
 from config.settings import COMPANY_UNIVERSE_CSV, COMPANY_URLS_JSON, DONE
+from pipeline.type_router import route_file
+from pipeline.parser import Parser
 
 # Add project root to path so imports work properly
 sys.path.insert(0, str(Path(__file__).parent))
@@ -40,75 +43,23 @@ logger.addHandler(file_handler)
 logger.addHandler(stdout_handler)
 logger.setLevel(logging.INFO)
 
-
-# def get_available_symbols() -> List[str]:
-#     """Get list of available symbols from universe CSV."""
-#     try:
-#         import pandas as pd
-#         universe_file = Path('config/company_universe.csv')
-        
-#         if not universe_file.exists():
-#             logger.warning("Universe file not found, using default symbols")
-#             return ['RELIANCE', 'TCS', 'HDFCBANK']  # Default fallback
-            
-#         df = pd.read_csv(universe_file)
-#         # Handle different column names - look for ticker or Symbol
-#         if 'ticker' in df.columns:
-#             return df['ticker'].dropna().tolist()
-#         elif 'Symbol' in df.columns:
-#             return df['Symbol'].dropna().tolist() 
-#         else:
-#             # If no standard column names found, try to get first column
-#             return df.iloc[:, 0].dropna().tolist()
-            
-#     except Exception as e:
-#         logger.error(f"Error reading universe file: {str(e)}")
-#         return ['RELIANCE', 'TCS', 'HDFCBANK']  # Default fallback
-
-
 def get_company_universe() -> List[str]:
     """Get complete company universe from CSV."""
     try:
-        import pandas as pd
         df = pd.read_csv(COMPANY_UNIVERSE_CSV)
         
         if 'Symbol' in df.columns:
-            return [symbol.strip() for symbol in df['Symbol'] if symbol and str(symbol).strip()]
+            # pd.notna() ignores empty cells, str() forces the rest to text before stripping
+            return [str(symbol).strip() for symbol in df['Symbol'] if pd.notna(symbol) and str(symbol).strip()]
         elif 'ticker' in df.columns:
-            return [symbol.strip() for symbol in df['ticker'] if symbol and str(symbol).strip()]
+            return [str(symbol).strip() for symbol in df['ticker'] if pd.notna(symbol) and str(symbol).strip()]
         else:
             # Return first column as a fallback
-            return [str(row).strip() for row in df.iloc[:, 0] if str(row).strip()]
+            return [str(row).strip() for row in df.iloc[:, 0] if pd.notna(row) and str(row).strip()]
             
     except Exception as e:
         logger.error(f"Error reading universe CSV: {str(e)}")
         return []
-
-
-# def check_url_discovery_completed() -> bool:
-#     """Check if we can skip URL discovery by looking at existing company_urls.json."""
-#     # If company_urls.json doesn't exist, we need to run discovery
-#     if not COMPANY_URLS_JSON.exists():
-#         return False
-
-#     try:
-#         import json
-#         with open(COMPANY_URLS_JSON, 'r') as f:
-#             urls_data = json.load(f)
-            
-#         # Get universe symbols
-#         universe_symbols = set(get_company_universe())
-        
-#         # Check how many are already in the URL discovery data
-#         discovered_symbols = set(urls_data.keys())
-        
-#         # If we have all companies discovered, skip further discovery
-#         return discovered_symbols >= universe_symbols
-        
-#     except Exception as e:
-#         logger.warning(f"Error checking URL discovery status: {str(e)}")
-#         return False
-
 
 def run_url_discovery() -> None:
     """Run the URL discovery process."""
@@ -132,67 +83,6 @@ def run_url_discovery() -> None:
     except Exception as e:
         logger.error(f"Failed to run URL discovery: {str(e)}")
         raise
-
-
-# def check_completion_for_symbol(symbol: str) -> bool:
-#     """Check if all required files exist for a symbol."""
-#     done_path = DONE / f"{symbol}.md"
-#     return done_path.exists()
-
-
-# def inject_run_pipeline(symbols: Optional[List[str]] = None, overwrite: bool = False) -> None:
-#     """Run the pipeline process for specified symbols."""
-#     from pipeline.pipeline import PipelineRunner
-    
-#     logger.info(f"Starting pipeline process with {len(symbols) if symbols else 'all'} symbols")
-    
-#     # Read and parse company URLs
-#     try:
-#         import json
-#         with open(COMPANY_URLS_JSON, 'r') as f:
-#             company_urls = json.load(f)
-#     except Exception as e:
-#         logger.error(f"Error reading company URLs: {str(e)}")
-#         raise
-    
-#     # Filter symbols for processing if needed
-#     all_symbols = symbols if symbols is not None else get_company_universe()
-    
-#     # Create pipeline runner
-#     runner = PipelineRunner({
-#         'overwrite': overwrite,
-#         'output_dir': Path('data')
-#     })
-    
-#     processed_count = 0
-    
-#     for symbol in all_symbols:
-#         try:
-#             logger.info(f"Processing symbol: {symbol}")
-            
-#             # Skip if already completed
-#             if not overwrite and check_completion_for_symbol(symbol):
-#                 logger.info(f"Symbol {symbol} already completed, skipping")
-#                 continue
-            
-#             # Prepare URL list for this symbol
-#             urls = company_urls.get(symbol, {}).get('all_urls', [])
-            
-#             if not urls:
-#                 logger.warning(f"No URLs found for symbol {symbol}, skipping")
-#                 continue
-            
-#             # Run actual document processing using the existing company_crawler logic
-#             from Retrieval.Document.document_crawler import process_single_company
-#             process_single_company(symbol, urls, overwrite=overwrite)
-            
-#             processed_count += 1
-            
-#         except Exception as e:
-#             logger.error(f"Error processing symbol {symbol}: {str(e)}")
-#             continue
-    
-#     logger.info(f"Pipeline process completed. Processed {processed_count} symbols")
 
 
 def run_harvester_pipeline(
@@ -454,7 +344,7 @@ def run_stage(stage: str, symbol: str, overwrite: bool) -> None:
     
     # Check if output exists and skip if not overwriting
     if output_path.exists() or (stage in ['numeric', 'document', 'convert', 'clean', 'chunk', 'normalize'] and 
-                                output_path.parent.exists() and output_path.parent.glob('*')):
+                                output_path.parent.exists() and any(output_path.parent.iterdir())):
         if not overwrite:
             logger.info(f"[{datetime.utcnow().isoformat()}] [SKIP] [{symbol}] {stage} stage (output exists)")
             return
@@ -585,7 +475,6 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument('--Retreve_document', action='store_true',
                        help='Include document retrieval step in pipeline') 
 
-    
     return parser.parse_args()
 
 

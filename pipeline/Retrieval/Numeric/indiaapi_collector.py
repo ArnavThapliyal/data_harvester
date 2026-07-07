@@ -13,7 +13,7 @@ from typing import Any
 import httpx
 import pandas as pd
 
-from Retrieval.Numeric.base_numeric_collector import BaseNumericCollector
+from pipeline.Retrieval.Numeric.base_numeric_collector import BaseNumericCollector
 
 logger = logging.getLogger(__name__)
 

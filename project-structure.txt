@@ -1,35 +1,16 @@
 .
-├── .DS_Store
-├── .cursorignore
-├── .env
-├── .gitignore
 ├── .python-version
-├── .ruff_cache
-│   ├── .gitignore
-│   ├── 0.15.15
-│   │   ├── 1115956416103510493
-│   │   ├── 11519482751172142453
-│   │   ├── 1495691341948507118
-│   │   ├── 15236192633510485869
-│   │   ├── 2809088425588444286
-│   │   └── 7432333973196385277
-│   └── CACHEDIR.TAG
-├── .vscode
-│   └── launch.json
 ├── Doc
 │   ├── Base Collector arch designe
 │   ├── collector_validation_report.txt
-│   ├── cursor_prompt_base_collector.md
 │   ├── final_validation_report.txt
 │   ├── pipeline arch
 │   ├── pipeline_e2e_report.txt
 │   ├── pipeline_execution_trace.txt
 │   ├── pipeline_implementation_guide.md
-│   ├── populated
 │   └── startup_validation_report.txt
 ├── README.md
 ├── config
-│   ├── .DS_Store
 │   ├── __init__.py
 │   ├── company_universe.csv
 │   ├── company_urls.json
@@ -39,31 +20,10 @@
 │       ├── ind_NiftyMidSmallcap4005050_list.csv
 │       ├── ind_niftymidcapselect_list (1).csv
 │       └── ind_niftysmallcap50list.csv
-├── data
-│   ├── .DS_Store
-│   ├── chunked
-│   ├── cleaned
-│   │   ├── documents
-│   │   └── numeric
-│   ├── done
-│   ├── pipeline.log
-│   ├── raw
-│   │   ├── .DS_Store
-│   │   ├── 360ONE.json
-│   │   ├── 3MINDIA.json
-│   │   ├── bse
-│   │   ├── manifest.json
-│   │   ├── nse
-│   │   ├── numeric
-│   │   └── test.txt
-│   └── transient
-│       ├── documents
-│       └── numeric
 ├── live_smoke_test_plan.txt
 ├── main.py
 ├── pipeline
 │   ├── Retrieval
-│   │   ├── .DS_Store
 │   │   ├── Document
 │   │   │   ├── __init__.py
 │   │   │   └── document_crawler.py
@@ -82,6 +42,19 @@
 │   ├── __init__.py
 │   ├── chunker.py
 │   ├── cleaner.py
+│   ├── document_template
+│   │   ├── __init__.py
+│   │   ├── annual_report.py
+│   │   ├── classifier.py
+│   │   ├── default.py
+│   │   ├── earnings_call.py
+│   │   ├── investor_presentation.py
+│   │   ├── registry.py
+│   │   ├── rules.yaml
+│   │   ├── sebi_impact_report.py
+│   │   ├── sebi_self_disclosure.py
+│   │   ├── sustainability_report.py
+│   │   └── unknown.py
 │   ├── embedder.py
 │   ├── normalizer.py
 │   ├── parser.py
@@ -89,13 +62,13 @@
 │   ├── type_router.py
 │   ├── utils.py
 │   └── vector_store.py
-├── pipeline.py
 ├── project-structure.txt
 ├── pyproject.toml
 ├── scripts
 │   ├── __init__.py
 │   ├── build_universe.py
 │   └── url_discovery.py
+├── test_imports.py
 ├── tests
 │   ├── dry_run_trace.py
 │   ├── test_all_collectors.py
@@ -109,4 +82,4 @@
 ├── uv.lock
 └── validate_startup.py
 
-26 directories, 84 files
+11 directories, 72 files

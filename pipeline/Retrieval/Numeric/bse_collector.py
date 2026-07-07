@@ -8,7 +8,7 @@ from typing import Any
 import requests
 import pandas as pd
 
-from Retrieval.Numeric.base_numeric_collector import BaseNumericCollector
+from pipeline.Retrieval.Numeric.base_numeric_collector import BaseNumericCollector
 
 
 class BSECollector(BaseNumericCollector):

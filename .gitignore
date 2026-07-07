@@ -6,4 +6,7 @@ data/exports/
 __pycache__/
 *.pyc
 .venv/
-.DS_Store
+*.DS_Store
+.cursorignore
+.vscode
+.gitignore

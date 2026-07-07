@@ -13,7 +13,8 @@ import httpx
 import pandas as pd
 import yfinance as yf
 
-from Retrieval.Numeric.base_numeric_collector import BaseNumericCollector
+from pipeline.Retrieval.Numeric.base_numeric_collector import BaseNumericCollector
+from .base_numeric_collector import BaseNumericCollector
 
 logger = logging.getLogger(__name__)
 

@@ -28,6 +28,7 @@ import logging
 import json
 from pathlib import Path
 from typing import List, Dict, Any
+from config.settings import path
 
 # Import pipeline components required for execution order
 from pipeline.cleaner import Cleaner
@@ -36,10 +37,10 @@ from pipeline.normalizer import Normalizer
 from pipeline.embedder import Embedder
 
 # [MISSING] uncomment as each is built, in your stated order:
-from pipeline.type_router import TypeRouter
+from pipeline.type_router import route_file
 from pipeline.parser import Parser
 from pipeline.vector_store import VectorStore
-from Retrieval.registry import get_collector
+from pipeline.Retrieval.registry import get_collector
 
 # Configure logging
 logger = logging.getLogger(__name__)
@@ -49,7 +50,6 @@ class PipelineRunner:
     def __init__(self, config: Dict[str, Any] = None):
         """
         Initialize the pipeline runner.
-        
         Args:
             config: Configuration dictionary with options like 'overwrite' and 'output_dir'
         """
@@ -66,7 +66,7 @@ class PipelineRunner:
         
         # [MISSING] uncomment once each module exists
         self.document_crawler = get_collector("document")
-        self.type_router = TypeRouter()
+        # self.type_router = TypeRouter()  # [CONFIRM] - this doesn't exist yet, placeholder
         self.parser = Parser()
         self.vector_store = VectorStore(table_name="company_documents")
 
