@@ -5,7 +5,6 @@ This is a placeholder that should be implemented later based on the actual API.
 
 import json
 import logging
-import time
 from datetime import UTC, datetime
 from pathlib import Path
 from typing import Any
@@ -115,7 +114,7 @@ class IndiaAPICollector(BaseNumericCollector):
         """Normalize a single record to the expected format."""
         # All fields already match the OUTPUT_COLUMNS
         return record
-        
+
 if __name__ == "__main__":
     # Test this collector manually
     collector = IndiaAPICollector()

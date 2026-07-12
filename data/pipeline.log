@@ -20803,3 +20803,157 @@
 [2026-07-07 20:07:28,739] [INFO] [__main__] [2026-07-07T20:07:28.739026] [START] [ECLERX] normalize stage
 [2026-07-07 20:07:28,739] [INFO] [__main__] [Normalize] [ECLERX] processing
 [2026-07-07 20:07:28,739] [INFO] [__main__] [2026-07-07T20:07:28.739081] [DONE] [ECLERX] normalize stage completed
+[2026-07-11 21:14:51,096] [INFO] [__main__] Running discover stage for 360ONE
+[2026-07-11 21:14:51,096] [INFO] [__main__] [2026-07-11T21:14:51.096349] [START] [360ONE] discover stage
+[2026-07-11 21:14:51,096] [INFO] [__main__] Discover stage for 360ONE
+[2026-07-11 21:14:51,096] [INFO] [__main__] [2026-07-11T21:14:51.096441] [DONE] [360ONE] discover stage completed
+[2026-07-11 21:14:51,096] [INFO] [__main__] Running numeric stage for 360ONE
+[2026-07-11 21:14:51,096] [INFO] [__main__] [2026-07-11T21:14:51.096496] [START] [360ONE] numeric stage
+[2026-07-11 21:14:51,096] [INFO] [__main__] [Numeric] [360ONE] processing
+[2026-07-11 21:14:51,096] [INFO] [__main__] [2026-07-11T21:14:51.096590] [DONE] [360ONE] numeric stage completed
+[2026-07-11 21:14:51,096] [INFO] [__main__] Running document stage for 360ONE
+[2026-07-11 21:14:51,096] [INFO] [__main__] [2026-07-11T21:14:51.096680] [START] [360ONE] document stage
+[2026-07-11 21:14:51,096] [INFO] [__main__] [2026-07-11T21:14:51.096716] [SKIP] [360ONE] document stage (output exists)
+[2026-07-11 21:14:51,096] [INFO] [__main__] Running convert stage for 360ONE
+[2026-07-11 21:14:51,096] [INFO] [__main__] [2026-07-11T21:14:51.096786] [START] [360ONE] convert stage
+[2026-07-11 21:14:51,096] [INFO] [__main__] [Convert] [360ONE] processing
+[2026-07-11 21:14:51,096] [INFO] [__main__] [2026-07-11T21:14:51.096845] [DONE] [360ONE] convert stage completed
+[2026-07-11 21:14:51,096] [INFO] [__main__] Running clean stage for 360ONE
+[2026-07-11 21:14:51,096] [INFO] [__main__] [2026-07-11T21:14:51.096911] [START] [360ONE] clean stage
+[2026-07-11 21:14:51,096] [INFO] [__main__] [Clean] [360ONE] processing
+[2026-07-11 21:14:51,096] [INFO] [__main__] [2026-07-11T21:14:51.096986] [DONE] [360ONE] clean stage completed
+[2026-07-11 21:14:51,097] [INFO] [__main__] Running chunk stage for 360ONE
+[2026-07-11 21:14:51,097] [INFO] [__main__] [2026-07-11T21:14:51.097055] [START] [360ONE] chunk stage
+[2026-07-11 21:14:51,097] [INFO] [__main__] [Chunk] [360ONE] processing
+[2026-07-11 21:14:51,097] [INFO] [__main__] [2026-07-11T21:14:51.097138] [DONE] [360ONE] chunk stage completed
+[2026-07-11 21:14:51,097] [INFO] [__main__] Running normalize stage for 360ONE
+[2026-07-11 21:14:51,097] [INFO] [__main__] [2026-07-11T21:14:51.097179] [START] [360ONE] normalize stage
+[2026-07-11 21:14:51,097] [INFO] [__main__] [Normalize] [360ONE] processing
+[2026-07-11 21:14:51,097] [INFO] [__main__] [2026-07-11T21:14:51.097231] [DONE] [360ONE] normalize stage completed
+[2026-07-11 23:03:11,792] [INFO] [__main__] Processing symbol: 360ONE
+[2026-07-11 23:03:11,792] [INFO] [__main__] Running numeric stage for 360ONE
+[2026-07-11 23:03:11,792] [INFO] [__main__] [Numeric] [360ONE] processing
+[2026-07-11 23:03:12,096] [INFO] [__main__] Would run yfinance collector for 360ONE
+[2026-07-11 23:03:12,096] [INFO] [__main__] Would run nse collector for 360ONE
+[2026-07-11 23:03:12,096] [INFO] [__main__] Would run bsc collector for 360ONE
+[2026-07-11 23:03:12,097] [INFO] [__main__] Would run screener collector for 360ONE
+[2026-07-11 23:03:12,097] [INFO] [__main__] Would run indiaapi collector for 360ONE
+[2026-07-11 23:03:12,097] [INFO] [__main__] Running document stage for 360ONE
+[2026-07-11 23:03:12,097] [INFO] [__main__] [Document] [360ONE] processing
+[2026-07-11 23:03:12,533] [INFO] [__main__] Would process document crawling for 360ONE
+[2026-07-11 23:04:47,708] [INFO] [__main__] Processing symbol: 360ONE
+[2026-07-11 23:04:47,708] [INFO] [__main__] Running numeric stage for 360ONE
+[2026-07-11 23:04:47,708] [INFO] [__main__] [Numeric] [360ONE] processing
+[2026-07-11 23:04:47,903] [INFO] [__main__] Would run yfinance collector for 360ONE
+[2026-07-11 23:04:47,903] [INFO] [__main__] Would run nse collector for 360ONE
+[2026-07-11 23:04:47,903] [INFO] [__main__] Would run bsc collector for 360ONE
+[2026-07-11 23:04:47,903] [INFO] [__main__] Would run screener collector for 360ONE
+[2026-07-11 23:04:47,904] [INFO] [__main__] Would run indiaapi collector for 360ONE
+[2026-07-11 23:04:47,904] [INFO] [__main__] Running document stage for 360ONE
+[2026-07-11 23:04:47,904] [INFO] [__main__] [Document] [360ONE] processing
+[2026-07-11 23:04:48,158] [INFO] [__main__] Would process document crawling for 360ONE
+[2026-07-11 23:27:07,073] [INFO] [__main__] Starting main pipeline execution
+[2026-07-11 23:27:07,073] [INFO] [__main__] Starting pipeline execution for 1 symbols
+[2026-07-11 23:27:07,074] [INFO] [__main__] Processing symbol: 360ONE
+[2026-07-11 23:27:07,074] [INFO] [__main__] Running numeric stage for 360ONE
+[2026-07-11 23:27:07,074] [INFO] [__main__] [Numeric] [360ONE] starting numeric data collection
+[2026-07-11 23:27:07,402] [INFO] [__main__] Found 5 numeric collectors to process for symbol 360ONE
+[2026-07-11 23:27:07,402] [INFO] [__main__] Initializing YFinanceCollector collector
+[2026-07-11 23:27:07,403] [INFO] [__main__] Would run yfinance collector for 360ONE
+[2026-07-11 23:27:07,403] [INFO] [__main__] Initializing NSECollector collector
+[2026-07-11 23:27:07,403] [INFO] [__main__] Would run nse collector for 360ONE
+[2026-07-11 23:27:07,403] [INFO] [__main__] Initializing BSCCollector collector
+[2026-07-11 23:27:07,403] [INFO] [__main__] Would run bsc collector for 360ONE
+[2026-07-11 23:27:07,403] [INFO] [__main__] Initializing ScreenerCollector collector
+[2026-07-11 23:27:07,403] [INFO] [__main__] Would run screener collector for 360ONE
+[2026-07-11 23:27:07,403] [INFO] [__main__] Initializing IndiaAPICollector collector
+[2026-07-11 23:27:07,403] [INFO] [__main__] Would run indiaapi collector for 360ONE
+[2026-07-11 23:27:07,403] [INFO] [__main__] Running document stage for 360ONE
+[2026-07-11 23:27:07,403] [INFO] [__main__] [Document] [360ONE] starting document collection
+[2026-07-11 23:27:07,403] [INFO] [__main__] Document collection passover for 360ONE - skipping actual crawling
+[2026-07-11 23:27:07,833] [INFO] [__main__] Would process document crawling for 360ONE
+[2026-07-11 23:27:07,833] [INFO] [__main__] Pipeline execution completed successfully
+[2026-07-12 00:37:06,247] [INFO] [__main__] Starting main pipeline execution
+[2026-07-12 00:37:06,247] [INFO] [__main__] Starting pipeline execution for 1 symbols
+[2026-07-12 00:37:06,248] [INFO] [__main__] Processing symbol: 360ONE
+[2026-07-12 00:37:06,248] [INFO] [__main__] Running numeric stage for 360ONE
+[2026-07-12 00:37:06,248] [INFO] [__main__] [Numeric] [360ONE] starting numeric data collection
+[2026-07-12 00:37:06,647] [INFO] [__main__] Found 5 numeric collectors to process for symbol 360ONE
+[2026-07-12 00:37:06,647] [INFO] [__main__] Initializing YFinanceCollector collector
+[2026-07-12 00:37:06,649] [INFO] [__main__] Would run yfinance collector for 360ONE
+[2026-07-12 00:37:06,649] [INFO] [__main__] Initializing NSECollector collector
+[2026-07-12 00:37:06,649] [INFO] [__main__] Would run nse collector for 360ONE
+[2026-07-12 00:37:06,649] [INFO] [__main__] Initializing BSCCollector collector
+[2026-07-12 00:37:06,649] [INFO] [__main__] Would run bsc collector for 360ONE
+[2026-07-12 00:37:06,649] [INFO] [__main__] Initializing ScreenerCollector collector
+[2026-07-12 00:37:06,650] [INFO] [__main__] Would run screener collector for 360ONE
+[2026-07-12 00:37:06,650] [INFO] [__main__] Initializing IndiaAPICollector collector
+[2026-07-12 00:37:06,650] [INFO] [__main__] Would run indiaapi collector for 360ONE
+[2026-07-12 00:37:06,650] [INFO] [__main__] Running document stage for 360ONE
+[2026-07-12 00:37:06,650] [INFO] [__main__] [Document] [360ONE] starting document collection
+[2026-07-12 00:37:06,650] [INFO] [__main__] Document collection passover for 360ONE - skipping actual crawling
+[2026-07-12 00:37:07,189] [INFO] [__main__] Would process document crawling for 360ONE
+[2026-07-12 00:37:07,189] [INFO] [__main__] Pipeline execution completed successfully
+[2026-07-12 00:37:25,110] [INFO] [__main__] Starting main pipeline execution
+[2026-07-12 00:37:25,110] [INFO] [__main__] Starting pipeline execution for 1 symbols
+[2026-07-12 00:37:25,111] [INFO] [__main__] Processing symbol: 360ONE
+[2026-07-12 00:37:25,111] [INFO] [__main__] Running numeric stage for 360ONE
+[2026-07-12 00:37:25,111] [INFO] [__main__] [Numeric] [360ONE] starting numeric data collection
+[2026-07-12 00:37:25,277] [INFO] [__main__] Found 5 numeric collectors to process for symbol 360ONE
+[2026-07-12 00:37:25,278] [INFO] [__main__] Initializing YFinanceCollector collector
+[2026-07-12 00:37:25,278] [INFO] [__main__] Would run yfinance collector for 360ONE
+[2026-07-12 00:37:25,278] [INFO] [__main__] Initializing NSECollector collector
+[2026-07-12 00:37:25,278] [INFO] [__main__] Would run nse collector for 360ONE
+[2026-07-12 00:37:25,278] [INFO] [__main__] Initializing BSCCollector collector
+[2026-07-12 00:37:25,278] [INFO] [__main__] Would run bsc collector for 360ONE
+[2026-07-12 00:37:25,278] [INFO] [__main__] Initializing ScreenerCollector collector
+[2026-07-12 00:37:25,278] [INFO] [__main__] Would run screener collector for 360ONE
+[2026-07-12 00:37:25,278] [INFO] [__main__] Initializing IndiaAPICollector collector
+[2026-07-12 00:37:25,278] [INFO] [__main__] Would run indiaapi collector for 360ONE
+[2026-07-12 00:37:25,278] [INFO] [__main__] Running document stage for 360ONE
+[2026-07-12 00:37:25,278] [INFO] [__main__] [Document] [360ONE] starting document collection
+[2026-07-12 00:37:25,278] [INFO] [__main__] Document collection passover for 360ONE - skipping actual crawling
+[2026-07-12 00:37:25,496] [INFO] [__main__] Would process document crawling for 360ONE
+[2026-07-12 00:37:25,496] [INFO] [__main__] Pipeline execution completed successfully
+[2026-07-12 01:11:54,850] [INFO] [__main__] Starting main pipeline execution
+[2026-07-12 01:11:54,850] [INFO] [__main__] Starting pipeline execution for 1 symbols
+[2026-07-12 01:11:54,851] [INFO] [__main__] Processing symbol: 360ONE
+[2026-07-12 01:11:54,851] [INFO] [__main__] Running numeric stage for 360ONE
+[2026-07-12 01:11:54,851] [INFO] [__main__] [Numeric] [360ONE] starting numeric data collection
+[2026-07-12 01:11:55,089] [INFO] [__main__] Found 5 numeric collectors to process for symbol 360ONE
+[2026-07-12 01:11:55,089] [INFO] [__main__] Initializing YFinanceCollector collector
+[2026-07-12 01:11:55,090] [INFO] [__main__] Would run yfinance collector for 360ONE
+[2026-07-12 01:11:55,090] [INFO] [__main__] Initializing NSECollector collector
+[2026-07-12 01:11:55,090] [INFO] [__main__] Would run nse collector for 360ONE
+[2026-07-12 01:11:55,090] [INFO] [__main__] Initializing BSCCollector collector
+[2026-07-12 01:11:55,090] [INFO] [__main__] Would run bsc collector for 360ONE
+[2026-07-12 01:11:55,090] [INFO] [__main__] Initializing ScreenerCollector collector
+[2026-07-12 01:11:55,090] [INFO] [__main__] Would run screener collector for 360ONE
+[2026-07-12 01:11:55,090] [INFO] [__main__] Initializing IndiaAPICollector collector
+[2026-07-12 01:11:55,090] [INFO] [__main__] Would run indiaapi collector for 360ONE
+[2026-07-12 01:11:55,090] [INFO] [__main__] Running document stage for 360ONE
+[2026-07-12 01:11:55,090] [INFO] [__main__] [Document] [360ONE] starting document collection
+[2026-07-12 01:11:55,090] [INFO] [__main__] Document collection passover for 360ONE - skipping actual crawling
+[2026-07-12 01:11:55,415] [INFO] [__main__] Would process document crawling for 360ONE
+[2026-07-12 01:11:55,416] [INFO] [__main__] Pipeline execution completed successfully
+[2026-07-12 02:52:55,022] [INFO] [__main__] Starting main pipeline execution
+[2026-07-12 02:52:55,022] [INFO] [__main__] Starting pipeline execution for 1 symbols
+[2026-07-12 02:52:55,023] [INFO] [__main__] Processing symbol: 360ONE
+[2026-07-12 02:52:55,023] [INFO] [__main__] Running numeric stage for 360ONE
+[2026-07-12 02:52:55,023] [INFO] [__main__] [Numeric] [360ONE] starting numeric data collection
+[2026-07-12 02:52:55,267] [INFO] [__main__] Found 5 numeric collectors to process for symbol 360ONE
+[2026-07-12 02:52:55,267] [INFO] [__main__] Initializing YFinanceCollector collector
+[2026-07-12 02:52:55,267] [INFO] [__main__] Would run yfinance collector for 360ONE
+[2026-07-12 02:52:55,267] [INFO] [__main__] Initializing NSECollector collector
+[2026-07-12 02:52:55,268] [INFO] [__main__] Would run nse collector for 360ONE
+[2026-07-12 02:52:55,268] [INFO] [__main__] Initializing BSCCollector collector
+[2026-07-12 02:52:55,268] [INFO] [__main__] Would run bsc collector for 360ONE
+[2026-07-12 02:52:55,268] [INFO] [__main__] Initializing ScreenerCollector collector
+[2026-07-12 02:52:55,268] [INFO] [__main__] Would run screener collector for 360ONE
+[2026-07-12 02:52:55,268] [INFO] [__main__] Initializing IndiaAPICollector collector
+[2026-07-12 02:52:55,268] [INFO] [__main__] Would run indiaapi collector for 360ONE
+[2026-07-12 02:52:55,268] [INFO] [__main__] Running document stage for 360ONE
+[2026-07-12 02:52:55,268] [INFO] [__main__] [Document] [360ONE] starting document collection
+[2026-07-12 02:52:55,268] [INFO] [__main__] Document collection passover for 360ONE - skipping actual crawling
+[2026-07-12 02:52:55,594] [INFO] [__main__] Would process document crawling for 360ONE
+[2026-07-12 02:52:55,594] [INFO] [__main__] Pipeline execution completed successfully

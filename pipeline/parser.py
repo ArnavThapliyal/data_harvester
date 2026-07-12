@@ -11,13 +11,12 @@
     
 """
 
-import pdfplumber  #for pdfs
-from bs4 import BeautifulSoup
-from typing import Any, List, Dict, Tuple
+from typing import Any, List, Dict
 from docling.document_converter import DocumentConverter
 from docling.datamodel.pipeline_options import PdfPipelineOptions, EasyOcrOptions 
 from docling.datamodel.base_models import InputFormat
-import pathlib, zipfile, logging
+import pathlib
+import logging
 import json
 import os
 
@@ -25,7 +24,6 @@ import os
 logger = logging.getLogger(__name__)
 
 # Import type router for file routing decisions
-from pipeline.type_router import route_file
 
 class Parser:
     def __init__(self, compute_budget: dict = None):
