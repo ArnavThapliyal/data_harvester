@@ -12,18 +12,17 @@
 """
 
 from typing import Any, List, Dict
-from docling.document_converter import DocumentConverter
+from docling.document_converter import DocumentConverter, PdfFormatOption
 from docling.datamodel.pipeline_options import PdfPipelineOptions, EasyOcrOptions 
 from docling.datamodel.base_models import InputFormat, BaseFormatOption
+from docling.backend.pypdfium2_backend import PyPdfiumDocumentBackend
+from docling.datamodel.pipeline_options import OcrMacOptions, OcrOptions # Or whichever OCR engine you use
 import pathlib
 import logging
 import json
 import os
 
-# Configure logging
 logger = logging.getLogger(__name__)
-
-# Import type router for file routing decisions
 
 class Parser:
     def __init__(self, compute_budget: dict = None):
@@ -31,15 +30,15 @@ class Parser:
         pdf_options = PdfPipelineOptions()
         if self.compute_budget.get("enable_ml_ocr"):
             pdf_options.ocr_options = EasyOcrOptions(lang=["en", "hi"] if self.compute_budget.get("enable_hindi_translation") else ["en"])
-        # built ONCE — rebuilding per file reloads OCR models every time
-        # Create a custom format option class compatible with current docling version
-        class PdfFormatOption(BaseFormatOption):
-            def __init__(self, pipeline_options=None):
-                super().__init__(pipeline_options=pipeline_options)
-                # For newer versions of docling, we create a simple format option
-                self.pipeline_options = pipeline_options
-        
-        self.converter = DocumentConverter(format_options={InputFormat.PDF: PdfFormatOption(pipeline_options=pdf_options)})
+
+        self.converter = DocumentConverter(
+            format_options={
+                InputFormat.PDF: PdfFormatOption(
+                    pipeline_options=pdf_options,
+                    backend=PyPdfiumDocumentBackend  # <-- Add this argument
+                )
+            }
+        )
 
     def _load_compute_budget(self) -> Dict[str, Any]:
         """Load compute budget settings from configuration"""

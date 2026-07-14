@@ -27,6 +27,7 @@ rows, and doesn't stop them from being indexed either.
 """
 import hashlib
 import logging
+import os
 from datetime import datetime, timezone
 from pathlib import Path
 from typing import Any, Dict, Optional
@@ -128,7 +129,11 @@ class Indexer:
         propagate up to index_symbol()'s per-file try/except instead of
         being swallowed here.
         """
-        ir_blocks = self._parser.run(str(file_path), scratch_dir)
+        # Define the scratch directory (adjust the path if you want it stored elsewhere)
+        scratch_dir = str(file_path.parent / "scratch")
+        # Ensure the directory actually exists before the parser tries to use it
+        os.makedirs(scratch_dir, exist_ok=True)
+        ir_blocks: list[dict[Any, Any]] = self._parser.run(str(file_path), scratch_dir)
         if not ir_blocks:
             return 0
 

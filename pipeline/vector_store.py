@@ -48,15 +48,6 @@ def init_vector_store():
     return conn
 
 def format_chunk_data(chunk: Dict[str, Any]) -> Dict[str, Any]:
-    """
-    Format chunk data to match the strict schema.
-    
-    Args:
-        chunk (Dict): Original chunk dictionary with embedded data
-        
-    Returns:
-        Dict: Formatted chunk matching the schema
-    """
     # Extract and format required fields
     formatted_chunk = {
         'chunk_id': f"{chunk.get('metadata', {}).get('symbol', '')}_{chunk.get('content_hash', '')}",
@@ -66,7 +57,7 @@ def format_chunk_data(chunk: Dict[str, Any]) -> Dict[str, Any]:
         'source_url': chunk.get('metadata', {}).get('source_url', ''),
         'section_path': chunk.get('metadata', {}).get('section_path', ''),
         'page_range': chunk.get('metadata', {}).get('page_range', ''),
-        'chunk_text': chunk.get('text', ''),
+        'chunk_text': chunk.get('content', ''),
         'vector': json.dumps(chunk.get('embedding', [])),  # Convert list to JSON string for storage
         'downloaded_at': chunk.get('metadata', {}).get('downloaded_at', datetime.now().isoformat()),
         'content_hash': chunk.get('content_hash', '')

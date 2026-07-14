@@ -161,16 +161,7 @@ def batch_chunks(chunks: List[Dict[str, Any]], batch_size: int = 32) -> List[Lis
 
 
 def extract_texts_from_chunks(chunks: List[Dict[str, Any]]) -> List[str]:
-    """
-    Extract text content from chunk dictionaries.
-    
-    Args:
-        chunks (List[Dict]): List of chunk dictionaries
-        
-    Returns:
-        List[str]: List of plain text strings
-    """
-    return [chunk['text'] for chunk in chunks]
+    return [chunk['content'] for chunk in chunks]
 
 
 def embed_chunks(chunks: List[Dict[str, Any]]) -> List[Dict[str, Any]]:
