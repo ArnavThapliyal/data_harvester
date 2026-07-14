@@ -280,7 +280,7 @@ class Embedder:
         for chunk in chunk_data.get("chunks", []):
             # Make sure content_hash exists
             if "content_hash" not in chunk:
-                chunk["content_hash"] = hashlib.sha256(chunk["text"].encode()).hexdigest()
+                chunk["content_hash"] = hashlib.sha256(chunk["content"].encode()).hexdigest()
                 
             all_chunks.append(chunk)
         

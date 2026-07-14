@@ -8,6 +8,7 @@ from pathlib import Path
 
 # Database configuration
 DB_PATH = "data/vector_store.db"
+TABLE_NAME = "chunks"
 
 def init_vector_store():
     """

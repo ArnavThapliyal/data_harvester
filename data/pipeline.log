@@ -20957,3 +20957,4 @@
 [2026-07-12 02:52:55,268] [INFO] [__main__] Document collection passover for 360ONE - skipping actual crawling
 [2026-07-12 02:52:55,594] [INFO] [__main__] Would process document crawling for 360ONE
 [2026-07-12 02:52:55,594] [INFO] [__main__] Pipeline execution completed successfully
+[2026-07-14 02:40:52,903] [INFO] [__main__] Mode: single symbol, all stages (360ONE)

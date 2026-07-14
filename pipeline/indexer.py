@@ -31,7 +31,7 @@ from datetime import datetime, timezone
 from pathlib import Path
 from typing import Any, Dict, Optional
 
-from config.settings import RAW_DOCUMENTS, SCRATCH_DIR
+from config.settings import RAW_DOCUMENTS, RAW_NUMERIC, TRANS_NUMERIC, TRANS_DOCUMENTS, CLEANED_NUMERIC, CLEANED_DOCUMENTS, CHUNKED, DONE
 from pipeline.type_router import route_file
 from pipeline.parser import Parser
 from pipeline.cleaner import Cleaner
@@ -62,7 +62,9 @@ class Indexer:
             logger.warning(f"[indexer] [{symbol}] no raw input found at {raw_dir}")
             return {"status": "no_data", "files_indexed": 0}
 
-        SCRATCH_DIR.mkdir(parents=True, exist_ok=True)  # route_file needs somewhere to extract zips
+        # Use the RAW_DOCUMENTS directory as scratch space for temporary operations
+        scratch_dir = RAW_DOCUMENTS / symbol / "scratch"
+        scratch_dir.mkdir(parents=True, exist_ok=True)  # route_file needs somewhere to extract zips
 
         files_indexed = 0
         files_failed = 0
@@ -74,7 +76,7 @@ class Indexer:
             if not file_path.is_file() or file_path.name == "manifest.json":
                 continue
 
-            routed = route_file(str(file_path), SCRATCH_DIR)
+            routed = route_file(str(file_path), scratch_dir)
             if not routed:
                 files_skipped += 1
                 continue
@@ -126,7 +128,7 @@ class Indexer:
         propagate up to index_symbol()'s per-file try/except instead of
         being swallowed here.
         """
-        ir_blocks = self._parser.run(str(file_path), SCRATCH_DIR)
+        ir_blocks = self._parser.run(str(file_path), scratch_dir)
         if not ir_blocks:
             return 0
 

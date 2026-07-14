@@ -126,7 +126,7 @@ class Normalizer:
             # If classifier returns unknown, handle gracefully 
             if not doc_type or doc_type == 'unknown':
                 logger.warning(f"Document classification returned 'unknown' for {source_filename}")
-                return "unknown"
+                return "unknown_filing"
                 
             return doc_type
             
@@ -194,6 +194,7 @@ class Normalizer:
             
             # Check if this block has OCR flags (placeholder - would be set by parser)
             # For now, we'll track basic count as a placeholder
+        # In a real implementation, this would integrate with actual parser output
         
         # Build metadata dictionary
         metadata = {

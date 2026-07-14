@@ -9,6 +9,7 @@
 │   ├── pipeline_execution_trace.txt
 │   ├── pipeline_implementation_guide.md
 │   └── startup_validation_report.txt
+├── PROJECT_STATE.md
 ├── README.md
 ├── config
 │   ├── __init__.py
@@ -20,7 +21,7 @@
 │       ├── ind_NiftyMidSmallcap4005050_list.csv
 │       ├── ind_niftymidcapselect_list (1).csv
 │       └── ind_niftysmallcap50list.csv
-├── live_smoke_test_plan.txt
+├── files
 ├── main.py
 ├── pipeline
 │   ├── Retrieval
@@ -56,11 +57,11 @@
 │   │   ├── sustainability_report.py
 │   │   └── unknown.py
 │   ├── embedder.py
+│   ├── indexer.py
 │   ├── normalizer.py
 │   ├── parser.py
 │   ├── pipeline.py
 │   ├── type_router.py
-│   ├── utils.py
 │   └── vector_store.py
 ├── project-structure.txt
 ├── pyproject.toml
@@ -79,7 +80,6 @@
 │   ├── test_step5_registry.py
 │   ├── test_step6_bsc_collector.py
 │   └── test_yfinance_api_.py
-├── uv.lock
-└── validate_startup.py
+└── uv.lock
 
-11 directories, 72 files
+12 directories, 71 files

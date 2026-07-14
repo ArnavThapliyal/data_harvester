@@ -1,333 +1,181 @@
 #!/usr/bin/env python3
+"""
+Pipeline orchestration logic.
+
+PipelineRunner does exactly three things, nothing else:
+    1. Run the appropriate stage modules, in order, for each symbol.
+    2. Log every stage start/end, every symbol, every status.
+    3. Validate the metadata dict each stage's run() call returns.
+
+It has zero knowledge of *how* a stage does its job — that logic lives in the
+stage's own module. If a comment in this file ever explains *how* a stage
+does its job, that comment is wrong and belongs in that stage's module
+instead.
+
+ACTIVE CHAIN (STAGE_ORDER):
+    document_crawler -> index
+
+    Down from seven stages to two. type_router, parser, cleaner, chunker,
+    and embedder used to each be an independent stage writing its own
+    directory for the next one to read — data/transient/, data/cleaned/,
+    data/chunked/, data/embedded/. All of that is gone. pipeline/indexer.py
+    now does route -> parse -> clean -> chunk -> embed -> upsert as one
+    in-memory call per file; the intermediate directories only existed to
+    hand data between process boundaries that no longer exist. See
+    indexer.py's module docstring for why this also makes each file's
+    indexing atomic without any explicit rollback machinery.
+
+    document_crawler stays a separate stage deliberately — it's slow,
+    network-bound, and rate-limited against BSE/NSE/screener.in. You want
+    to be able to re-run indexing (e.g. after tuning chunk_size or
+    switching embedding models) without re-hitting those sites.
+
+    Normalizer is intentionally excluded from STAGE_ORDER this pass —
+    [DEFERRED], not removed.
+
+    Numeric collection/cleaning is intentionally excluded this pass —
+    [DEFERRED], not removed.
+
+FAILURE MODEL:
+    Symbol-level: document_crawler failing for a symbol skips index for
+    that symbol (nothing to index yet) and marks the symbol failed. Within
+    index, failure is per FILE — indexer.py's index_symbol() already
+    isolates one bad file from the rest of the symbol's files (see its
+    docstring); a symbol only gets marked failed here if the index stage
+    itself raises, which happens when index_symbol()'s own bookkeeping
+    breaks, not when an individual document fails to parse (that's
+    files_failed in the returned metadata, still a "success" status for
+    the symbol as a whole if at least one file made it in).
+
+METADATA CONTRACT: [CONFIRM]
+    Each stage's run(symbol) is expected to eventually return a dict shaped
+    roughly like {"status": "success" | "skipped" | "no_data", ...}. That
+    contract isn't locked in against the real stage modules yet, so
+    _normalize_stage_result() tolerates a stage returning None or something
+    non-dict rather than crashing on it.
+
+TAG LEGEND:
+    [MISSING]  - functionality not implemented yet, flagged rather than faked
+    [DEFERRED] - module exists, intentionally not in the active chain this pass
+    [CONFIRM]  - verify against the real module's interface once finalized
+"""
+
 import logging
-from pathlib import Path
-from typing import List, Dict, Any
+from typing import Any, Callable, Dict, List, Optional
 
-# Import pipeline components required for execution order
-from pipeline.cleaner import Cleaner
-from pipeline.chunker import Chunker
-from pipeline.embedder import Embedder
-from pipeline.vector_store import VectorStore
+from pipeline.Retrieval.Document.document_crawler import run as run_document_crawler
+from pipeline.indexer import Indexer
+from pipeline.normalizer import Normalizer  # instantiated, not wired into STAGE_ORDER — [DEFERRED]
 
-# Import registry and collectors
-from pipeline.Retrieval.registry import get_collector, get_collectors
-
-# Configure logging
 logger = logging.getLogger(__name__)
 
-# Constants - Define the active chain exactly as specified
+# Single source of truth for stage names. main.py imports this directly for
+# --stage's argparse choices, so the CLI and the runner can never drift into
+# two different stage taxonomies again.
 STAGE_ORDER = [
-    "document_crawler", 
-    "type_router", 
-    "parser", 
-    "cleaner", 
-    "chunker", 
-    "embedder", 
-    "vector_store"
+    "document_crawler",
+    "index",
 ]
 
+
 class PipelineRunner:
-    def __init__(self, config: Dict[str, Any] = None):
+
+    def __init__(self, config: Optional[Dict[str, Any]] = None):
         """
-        Initialize the pipeline runner.
         Args:
-            config: Configuration dictionary with options like 'overwrite' and 'output_dir'
+            config: reserved for future options (e.g. overwrite/resume).
+                    Nothing reads it yet — [MISSING] skip-if-already-done
+                    logic. Every run currently reprocesses every requested
+                    stage in full.
         """
         self.config = config or {}
-        self.overwrite = self.config.get('overwrite', False)
-        self.output_dir = Path(self.config.get('output_dir', 'data'))
 
-        # Initialize pipeline components
-        self.cleaner = Cleaner()
-        self.chunker = Chunker()
-        self.embedder = Embedder()
-        self.vector_store = VectorStore(table_name="company_documents")
+        self._indexer = Indexer()
+        self._normalizer = Normalizer()  # [DEFERRED] instantiated, not called from run()
 
-        # Initialize collectors
-        self.collectors = get_collectors()
+        self._stage_fns: Dict[str, Callable[[str], Any]] = {
+            "document_crawler": self._call_document_crawler,
+            "index": self._call_index,
+        }
 
-    def run(self, symbols: List[str]) -> None:
+    # ---- stage adapters -----------------------------------------------
+
+    def _call_document_crawler(self, symbol: str) -> Any:
+        return run_document_crawler(symbol)
+
+    def _call_index(self, symbol: str) -> Any:
+        return self._indexer.index_symbol(symbol)
+
+    # ---- core run loop --------------------------------------------------
+
+    def run(self, symbols: List[str], stage: Optional[str] = None) -> Dict[str, Any]:
         """
-        Run the full pipeline for a list of symbols in documented sequence.
-        
+        Run the pipeline for a list of symbols.
+
         Args:
-            symbols: List of company ticker symbols to process
+            symbols: company ticker symbols to process.
+            stage: if given, run only this single stage for each symbol
+                   instead of the full STAGE_ORDER chain. Must be a name
+                   from STAGE_ORDER.
+
+        Returns:
+            {"total": int, "succeeded": [symbols], "failed": [symbols]}
         """
-        logger.info(f"Starting pipeline for {len(symbols)} symbols")
-        
-        # Load necessary dependencies for stages that are explicitly mentioned
-        from pipeline.Retrieval.Document.document_crawler import process_single_company
-        
-        try:
-            for symbol in symbols:
-                # Special handling for 360ONE - skip document_crawler and start from type_router
-                skip_document_crawler = (symbol == "360ONE")
-                
-                # Initialize clean logging state for the symbol
-                logger.info(f"[Pipeline] [{symbol}] starting")
-                
-                # Begin a try/except block to capture any stage-level failures
+        if stage is not None and stage not in STAGE_ORDER:
+            raise ValueError(f"Unknown stage {stage!r}. Must be one of {STAGE_ORDER}")
+
+        stages_to_run = [stage] if stage else list(STAGE_ORDER)
+        logger.info(f"Starting pipeline for {len(symbols)} symbol(s) — stages: {stages_to_run}")
+
+        succeeded: List[str] = []
+        failed: List[str] = []
+
+        for symbol in symbols:
+            logger.info(f"[Pipeline] [{symbol}] starting")
+            symbol_failed = False
+
+            for stage_name in stages_to_run:
+                logger.info(f"[{stage_name}] [{symbol}] starting")
                 try:
-                    # For each symbol, iterate through STAGE_ORDER strictly in sequence
-                    for stage_name in STAGE_ORDER:
-                        # Skip document_crawler for 360ONE symbol
-                        if skip_document_crawler and stage_name == "document_crawler":
-                            logger.info(f"[SKIP] [{symbol}] document_crawler stage skipped for 360ONE")
-                            continue
-                        
-                        # Step A: Logging (Pre-Execution)
-                        logger.info(f"STAGE_START [{symbol}] {stage_name}")
-                        
-                        # Step B: The Interface Split (Adapters vs. Standard)
-                        try:
-                            result = None  # Initialize result to avoid Pyright warning
-                            
-                            if stage_name in ("type_router", "parser"):
-                                # Call a dedicated adapter method
-                                if stage_name == "type_router":
-                                    result = self._call_type_router(symbol)
-                                elif stage_name == "parser":
-                                    result = self._call_parser(symbol)
-                                
-                                # Step C: Metadata Normalization & Validation
-                                normalized_result = self._normalize_stage_result(result)
-                                validated_result = self._validate_metadata(normalized_result)
-                                
-                            else:
-                                # For all other stages, call stage.run(symbol) directly
-                                if stage_name == "document_crawler":
-                                    # Handle special case for document crawler
-                                    result = self._run_document_crawler(symbol, process_single_company)
-                                    normalized_result = self._normalize_stage_result(result)
-                                    validated_result = self._validate_metadata(normalized_result)
-                                elif stage_name == "cleaner":
-                                    # For cleaner, we run both numeric and document cleaning
-                                    self.cleaner.run(symbol, "numeric")
-                                    self.cleaner.run(symbol, "document")
-                                    # Create a proper result structure for validation
-                                    normalized_result = self._normalize_stage_result(None)
-                                    validated_result = self._validate_metadata(normalized_result)
-                                elif stage_name == "chunker":
-                                    self.chunker.run(symbol)
-                                    normalized_result = self._normalize_stage_result(None)
-                                    validated_result = self._validate_metadata(normalized_result)
-                                elif stage_name == "embedder":
-                                    self.embedder.run(symbol)
-                                    normalized_result = self._normalize_stage_result(None)
-                                    validated_result = self._validate_metadata(normalized_result)
-                                elif stage_name == "vector_store":
-                                    # Vector store will be implemented later, for now just log
-                                    logger.info(f"[VectorStore] [{symbol}] processing")
-                                    normalized_result = self._normalize_stage_result(None)
-                                    validated_result = self._validate_metadata(normalized_result)
-                                else:
-                                    # For other stages, call their run methods
-                                    logger.warning(f"Stage {stage_name} not implemented yet")
-                                    # Create a placeholder result for validation
-                                    normalized_result = self._normalize_stage_result(None)
-                                    validated_result = self._validate_metadata(normalized_result)
+                    raw_result = self._stage_fns[stage_name](symbol)
+                    metadata = self._normalize_stage_result(raw_result)
+                    self._validate_metadata(stage_name, symbol, metadata)
+                    logger.info(f"[{stage_name}] [{symbol}] completed: {metadata}")
+                except Exception as exc:
+                    logger.error(f"[{stage_name}] [{symbol}] failed: {exc}", exc_info=True)
+                    symbol_failed = True
+                    break  # downstream stages depend on this one's output — no point continuing
 
-                        except Exception as e:
-                            # Step D: Logging (Post-Execution)
-                            logger.error(f"STAGE_ERROR [{symbol}] {stage_name}: {str(e)}")
-                            
-                            # Log the failure and mark symbol as failed
-                            logger.error(f"[Pipeline] [{symbol}] failed at stage {stage_name}: {str(e)}")
-                            
-                            # Break inner loop (Skip remaining stages for this symbol)
-                            break
-                        
-                        # Step D: Logging (Post-Execution) 
-                        logger.info(f"STAGE_END [{symbol}] {stage_name}: {validated_result}")
-                        
-                except Exception as e:
-                    logger.error(f"Failed to process symbol {symbol}: {str(e)}")
-                    continue  # Continue with next symbol
-                
+            if symbol_failed:
+                logger.error(f"[Pipeline] [{symbol}] aborted — see failed stage above")
+                failed.append(symbol)
+            else:
                 logger.info(f"[Pipeline] [{symbol}] completed successfully")
-                
-        except Exception as e:
-            logger.error(f"Error in pipeline execution: {str(e)}")
-            raise
+                succeeded.append(symbol)
 
-    def _normalize_stage_result(self, raw_result: Any) -> Dict[str, Any]:
-        """
-        Normalize the raw result from a stage execution.
-        
-        Args:
-            raw_result: Raw return value from stage execution
-            
-        Returns:
-            Dictionary with normalized structure
-        """
-        if raw_result is None or not isinstance(raw_result, dict):
-            # If raw_result is None or not a dictionary, wrap it in a default structure
-            return {
-                "status": "success",
-                "result": raw_result,
-                "message": "No result returned"
-            }
-        else:
-            # If it's already a dictionary, make sure it has the required structure
-            normalized = raw_result.copy()
-            
-            # Ensure status key exists
-            if "status" not in normalized:
-                normalized["status"] = "success"
-                
-            return normalized
+        logger.info(
+            f"Pipeline run complete: {len(succeeded)} succeeded, "
+            f"{len(failed)} failed, out of {len(symbols)}"
+        )
+        return {"total": len(symbols), "succeeded": succeeded, "failed": failed}
 
-    def _validate_metadata(self, normalized_dict: Dict[str, Any]) -> Dict[str, Any]:
-        """
-        Validate the normalized metadata from a stage execution.
-        
-        Args:
-            normalized_dict: Normalized dictionary to validate
-            
-        Returns:
-            Validated dictionary (with status check)
-        """
-        # Check for the presence of a status key containing either "success" or "skipped"
-        if "status" in normalized_dict:
-            status = normalized_dict["status"]
-            if status not in ["success", "skipped"]:
-                logger.warning(f"Stage status validation issue: {status} is not in ['success', 'skipped']")
-        
-        # If status is missing, default to success
-        if "status" not in normalized_dict:
-            normalized_dict["status"] = "success"
-            
-        return normalized_dict
+    # ---- metadata handling ------------------------------------------------
 
-    def _call_type_router(self, symbol: str) -> Dict[str, Any]:
-        """
-        Call the type router adapter for a symbol.
-        
-        Args:
-            symbol: Company ticker symbol
-            
-        Returns:
-            Result from type router execution
-        """
-        try:
-            # Import and call the type router functionality
-            from pipeline.type_router import route_file
-            
-            # Read the filesystem to get the specific raw-download directory for the symbol
-            raw_dir = Path(f"data/raw/{symbol}")
-            
-            # Enumerate all files in that directory
-            if raw_dir.exists():
-                files = list(raw_dir.iterdir())
-                file_paths = [f for f in files if f.is_file()]
-                
-                # Call the actual module's method iteratively for each file
-                results = []
-                for file_path in file_paths:
-                    try:
-                        result = route_file(str(file_path), self.output_dir)
-                        results.append(result)
-                    except Exception as e:
-                        logger.warning(f"Type router failed for {file_path}: {str(e)}")
-                        continue
-                        
-                return {
-                    "status": "success",
-                    "files_processed": len(file_paths),
-                    "results": results
-                }
-            else:
-                logger.warning(f"Raw directory does not exist for {symbol}: {raw_dir}")
-                return {
-                    "status": "skipped",
-                    "message": f"Raw directory does not exist: {raw_dir}"
-                }
-                
-        except Exception as e:
-            logger.error(f"Type router adapter failed for {symbol}: {str(e)}")
-            return {
-                "status": "failed",
-                "error": str(e)
-            }
+    @staticmethod
+    def _normalize_stage_result(raw: Any) -> Dict[str, Any]:
+        """Coerce whatever a stage returns into a dict so logging/validation never breaks on it."""
+        if raw is None:
+            # [CONFIRM] stage returned nothing — assumed success since no exception was raised.
+            return {"status": "success"}
+        if isinstance(raw, dict):
+            return raw
+        # [CONFIRM] stage returned a non-dict — wrapping rather than dropping it.
+        return {"status": "success", "raw_result": raw}
 
-    def _call_parser(self, symbol: str) -> Dict[str, Any]:
-        """
-        Call the parser adapter for a symbol.
-        
-        Args:
-            symbol: Company ticker symbol
-            
-        Returns:
-            Result from parser execution
-        """
-        try:
-            # Import and call the parser functionality
-            from pipeline.parser import parse_file
-            
-            # Read the filesystem to get the specific raw-download directory for the symbol
-            raw_dir = Path(f"data/raw/{symbol}")
-            
-            # Enumerate all files in that directory
-            if raw_dir.exists():
-                files = list(raw_dir.iterdir())
-                file_paths = [f for f in files if f.is_file()]
-                
-                # Call the actual module's method iteratively for each file
-                results = []
-                for file_path in file_paths:
-                    try:
-                        # For parser, we need to pass scratch_dir as well
-                        result = parse_file(str(file_path), self.output_dir)
-                        results.append(result)
-                    except Exception as e:
-                        logger.warning(f"Parser failed for {file_path}: {str(e)}")
-                        continue
-                        
-                return {
-                    "status": "success",
-                    "files_processed": len(file_paths),
-                    "results": results
-                }
-            else:
-                logger.warning(f"Raw directory does not exist for {symbol}: {raw_dir}")
-                return {
-                    "status": "skipped",
-                    "message": f"Raw directory does not exist: {raw_dir}"
-                }
-                
-        except Exception as e:
-            logger.error(f"Parser adapter failed for {symbol}: {str(e)}")
-            return {
-                "status": "failed",
-                "error": str(e)
-            }
-
-    def _run_document_crawler(self, symbol: str, process_function) -> Dict[str, Any]:
-        """
-        Run document crawler stage.
-        
-        Args:
-            symbol: Company ticker symbol
-            process_function: Function to process single company
-            
-        Returns:
-            Result from document crawler execution
-        """
-        try:
-            logger.info(f"[DocumentCrawler] [{symbol}] starting")
-            
-            # This would typically call process_single_company with proper arguments
-            # But for now we'll simulate a successful run
-            logger.info(f"[DocumentCrawler] [{symbol}] completed successfully")
-            
-            return {
-                "status": "success",
-                "message": "Document crawler completed"
-            }
-            
-        except Exception as e:
-            logger.error(f"[DocumentCrawler] [{symbol}] failed: {str(e)}")
-            return {
-                "status": "failed",
-                "error": str(e)
-            }
+    @staticmethod
+    def _validate_metadata(stage_name: str, symbol: str, metadata: Dict[str, Any]) -> None:
+        """[CONFIRM] Minimal shape check until each stage's real return contract is locked in."""
+        if "status" not in metadata:
+            logger.warning(f"[{stage_name}] [{symbol}] metadata missing 'status' key: {metadata}")
+        elif metadata["status"] not in ("success", "skipped", "no_data"):
+            logger.warning(f"[{stage_name}] [{symbol}] unexpected status value: {metadata['status']!r}")

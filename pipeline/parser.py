@@ -14,7 +14,7 @@
 from typing import Any, List, Dict
 from docling.document_converter import DocumentConverter
 from docling.datamodel.pipeline_options import PdfPipelineOptions, EasyOcrOptions 
-from docling.datamodel.base_models import InputFormat
+from docling.datamodel.base_models import InputFormat, BaseFormatOption
 import pathlib
 import logging
 import json
@@ -32,9 +32,15 @@ class Parser:
         if self.compute_budget.get("enable_ml_ocr"):
             pdf_options.ocr_options = EasyOcrOptions(lang=["en", "hi"] if self.compute_budget.get("enable_hindi_translation") else ["en"])
         # built ONCE — rebuilding per file reloads OCR models every time
-        from docling.datamodel.pipeline_options import PdfFormatOption
+        # Create a custom format option class compatible with current docling version
+        class PdfFormatOption(BaseFormatOption):
+            def __init__(self, pipeline_options=None):
+                super().__init__(pipeline_options=pipeline_options)
+                # For newer versions of docling, we create a simple format option
+                self.pipeline_options = pipeline_options
+        
         self.converter = DocumentConverter(format_options={InputFormat.PDF: PdfFormatOption(pipeline_options=pdf_options)})
-  
+
     def _load_compute_budget(self) -> Dict[str, Any]:
         """Load compute budget settings from configuration"""
         # This is a placeholder based on your specification
@@ -74,16 +80,34 @@ class Parser:
             for item, level in doc.iterate_items():
                 try:
                     page_no = item.prov[0].page_no if getattr(item, "prov", None) else None
-                    if hasattr(item, 'table') and item.table:
+                    # Check for docling item types properly - these are not simple boolean attributes
+                    if hasattr(item, 'table') and item.table is not None:
                         # Assuming table items have export_to_dataframe method
                         md = item.export_to_dataframe(doc=doc).to_markdown(index=False)
                         blocks.append({"type": "table", "content": md, "page_number": page_no})
-                    elif hasattr(item, 'header'):
-                        blocks.append({"type": "header", "content": item.text, "hierarchical_level": item.level, "page_number": page_no})
-                    elif hasattr(item, 'list_item'):
-                        blocks.append({"type": "list_item", "content": item.text, "page_number": page_no})
-                    elif hasattr(item, 'text'):
+                    elif hasattr(item, 'header') and item.header is not None:
+                        # Headers have text attribute, not the item itself
+                        blocks.append({"type": "header", "content": getattr(item, 'text', ''), "hierarchical_level": getattr(item, 'level', 0), "page_number": page_no})
+                    elif hasattr(item, 'list_item') and item.list_item is not None:
+                        # List items have text attribute
+                        blocks.append({"type": "list_item", "content": getattr(item, 'text', ''), "page_number": page_no})
+                    elif hasattr(item, 'text') and item.text is not None:
+                        # Regular text content - this catches most elements
                         blocks.append({"type": "paragraph", "content": item.text, "page_number": page_no})
+                    else:
+                        # Try to identify the type by class name or other means
+                        item_type = getattr(item, '__class__', type(item)).__name__
+                        if 'Table' in item_type or 'table' in item_type.lower():
+                            # Handle table items
+                            if hasattr(item, 'export_to_dataframe'):
+                                md = item.export_to_dataframe(doc=doc).to_markdown(index=False)
+                                blocks.append({"type": "table", "content": md, "page_number": page_no})
+                        elif 'Header' in item_type or 'header' in item_type.lower():
+                            # Handle header items
+                            blocks.append({"type": "header", "content": getattr(item, 'text', ''), "hierarchical_level": getattr(item, 'level', 0), "page_number": page_no})
+                        elif 'ListItem' in item_type or 'list_item' in item_type.lower():
+                            # Handle list items
+                            blocks.append({"type": "list_item", "content": getattr(item, 'text', ''), "page_number": page_no})
                 except Exception as e:
                     logger.warning(f"skipping bad item: {e}")  # per-item, doesn't drop the whole doc
                     continue
@@ -190,7 +214,7 @@ class Parser:
         Returns:
             Dict[str, Any]: IR block with proper structure and metadata
         """
-        
+
         # Extract page number (this is part of docling's element metadata)
         page_number = getattr(element, 'page', 1)  # Default to page 1
         
@@ -327,4 +351,3 @@ def parse_file(file_path: str, scratch_dir: pathlib.Path) -> List[Dict[str, Any]
     """Convenience function to parse a single file"""
     parser = Parser()
     return parser.run(file_path, scratch_dir)
-
