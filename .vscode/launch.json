@@ -11,7 +11,7 @@
             "program": "${workspaceFolder}/main.py",
             "python": "${workspaceFolder}/.venv/bin/python",
             "console": "integratedTerminal",
-            "args": ["--symbol", "360ONE"]
+            "args": ["--all-symbols"]
         }
     ]
 }

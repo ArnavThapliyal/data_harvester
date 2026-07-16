@@ -16011,3 +16011,340 @@ RuntimeError: lance error: Invalid user input: Cannot insert rows with a partial
 [2026-07-16 14:30:55,347] [WARNING] [pipeline.vector_store] Missing source_url in chunk for symbol 360ONE
 [2026-07-16 14:30:55,347] [WARNING] [pipeline.vector_store] Missing page_range in chunk for symbol 360ONE
 [2026-07-16 14:30:55,375] [INFO] [pipeline.vector_store] Successfully stored 21 chunks for symbol 360ONE
+[2026-07-16 14:49:22,465] [INFO] [pipeline.type_router] Routing /Users/arnav/Projects/Software/data_harvester/data/raw/documents/360ONE/202602130222_360_ONE_WAM_Limited.pdf to structured_doc_handler
+[2026-07-16 14:49:24,424] [INFO] [docling.datamodel.document] detected formats: [<InputFormat.PDF: 'pdf'>]
+[2026-07-16 14:49:24,426] [INFO] [docling.document_converter] Going to convert document batch...
+[2026-07-16 14:49:24,427] [INFO] [docling.pipeline.base_pipeline] Processing document 202602130222_360_ONE_WAM_Limited.pdf
+[2026-07-16 16:36:38,627] [INFO] [__main__] Mode: all symbols, all stages (365 symbols)
+[2026-07-16 16:36:38,628] [ERROR] [__main__] Pipeline failed to start: cannot access local variable 'runner' where it is not associated with a value
+Traceback (most recent call last):
+  File "/Users/arnav/Projects/Software/data_harvester/main.py", line 151, in main
+    summary = runner.run(symbols, stage=stage)
+              ^^^^^^
+UnboundLocalError: cannot access local variable 'runner' where it is not associated with a value
+[2026-07-16 17:43:31,896] [INFO] [__main__] Mode: all symbols, all stages (365 symbols)
+[2026-07-16 17:43:34,609] [INFO] [pipeline.pipeline] Starting pipeline for 365 symbol(s) — stages: ['document_crawler', 'index']
+[2026-07-16 17:43:34,610] [INFO] [pipeline.pipeline] [Pipeline] [360ONE] starting
+[2026-07-16 17:43:34,610] [INFO] [pipeline.pipeline] [document_crawler] [360ONE] starting
+[2026-07-16 17:43:35,249] [INFO] [pipeline.Retrieval.Document.document_crawler] [DocumentCrawler] [360ONE] skipping — manifest exists
+[2026-07-16 17:43:36,494] [INFO] [pipeline.pipeline] [document_crawler] [360ONE] completed: {'status': 'skipped'}
+[2026-07-16 17:43:36,494] [INFO] [pipeline.pipeline] [index] [360ONE] starting
+[2026-07-16 17:43:40,107] [WARNING] [pipeline.type_router] Unknown file type for /Users/arnav/Projects/Software/data_harvester/data/raw/documents/360ONE/.DS_Store: application/octet-stream
+[2026-07-16 17:43:43,386] [INFO] [pipeline.type_router] Routing /Users/arnav/Projects/Software/data_harvester/data/raw/documents/360ONE/08081_02072026132216_Certificate_-_CP_redemption_-_WB0.pdf to structured_doc_handler
+[2026-07-16 17:43:46,779] [INFO] [docling.datamodel.document] detected formats: [<InputFormat.PDF: 'pdf'>]
+[2026-07-16 17:43:46,794] [INFO] [docling.document_converter] Going to convert document batch...
+[2026-07-16 17:43:46,795] [INFO] [docling.document_converter] Initializing pipeline for StandardPdfPipeline with options hash 232dd41d6716a8665bf46e5b99b32743
+[2026-07-16 17:43:46,806] [INFO] [docling.models.factories.base_factory] Loading plugin 'docling_defaults'
+[2026-07-16 17:43:46,810] [INFO] [docling.models.factories] Registered picture descriptions: ['picture_description_vlm_engine', 'vlm', 'api']
+[2026-07-16 17:43:46,819] [INFO] [docling.models.factories.base_factory] Loading plugin 'docling_defaults'
+[2026-07-16 17:43:46,834] [INFO] [docling.models.factories] Registered ocr engines: ['auto', 'easyocr', 'kserve_v2_ocr', 'nemotron-ocr', 'ocrmac', 'rapidocr', 'tesserocr', 'tesseract']
+[2026-07-16 17:43:46,835] [INFO] [docling.models.stages.ocr.auto_ocr_model] ocrmac cannot be used because ocrmac is not installed.
+[2026-07-16 17:43:46,835] [INFO] [docling.models.stages.ocr.auto_ocr_model] rapidocr cannot be used because onnxruntime is not installed.
+[2026-07-16 17:43:46,835] [INFO] [docling.models.stages.ocr.auto_ocr_model] easyocr cannot be used because it is not installed.
+[2026-07-16 17:43:47,170] [INFO] [docling.utils.accelerator_utils] Accelerator device: 'mps'
+[2026-07-16 17:43:48,007] [INFO] [docling.models.stages.ocr.auto_ocr_model] Auto OCR model selected rapidocr with torch.
+[2026-07-16 17:43:48,012] [INFO] [docling.models.factories.base_factory] Loading plugin 'docling_defaults'
+[2026-07-16 17:43:48,015] [INFO] [docling.models.factories] Registered layout engines: ['layout_object_detection', 'docling_layout_default', 'docling_experimental_table_crops_layout']
+[2026-07-16 17:43:48,025] [INFO] [docling.utils.accelerator_utils] Accelerator device: 'mps'
+[2026-07-16 17:43:48,343] [INFO] [httpx] HTTP Request: GET https://huggingface.co/api/models/docling-project/docling-layout-heron/revision/main "HTTP/1.1 200 OK"
+[2026-07-16 17:43:49,007] [INFO] [docling.models.factories.base_factory] Loading plugin 'docling_defaults'
+[2026-07-16 17:43:49,011] [INFO] [docling.models.factories] Registered table structure engines: ['docling_tableformer', 'docling_tableformer_v2', 'granite_vision_table']
+[2026-07-16 17:43:49,276] [INFO] [httpx] HTTP Request: GET https://huggingface.co/api/models/docling-project/docling-models/revision/v2.3.0 "HTTP/1.1 200 OK"
+[2026-07-16 17:43:49,304] [INFO] [docling.utils.accelerator_utils] Accelerator device: 'mps'
+[2026-07-16 17:43:49,615] [INFO] [docling.pipeline.base_pipeline] Processing document 08081_02072026132216_Certificate_-_CP_redemption_-_WB0.pdf
+[2026-07-16 17:43:54,429] [INFO] [docling.document_converter] Finished converting document 08081_02072026132216_Certificate_-_CP_redemption_-_WB0.pdf in 7.65 sec.
+[2026-07-16 17:47:21,023] [INFO] [__main__] Mode: all symbols, all stages (365 symbols)
+[2026-07-16 17:47:22,917] [INFO] [pipeline.pipeline] Starting pipeline for 365 symbol(s) — stages: ['document_crawler', 'index']
+[2026-07-16 17:47:22,917] [INFO] [pipeline.pipeline] [Pipeline] [360ONE] starting
+[2026-07-16 17:47:22,918] [INFO] [pipeline.pipeline] [document_crawler] [360ONE] starting
+[2026-07-16 17:47:27,895] [INFO] [pipeline.Retrieval.Document.document_crawler] [DocumentCrawler] [360ONE] fetching seed URL: https://www.bseindia.com/corporates/ann.html?scripcd=542772
+[2026-07-16 17:47:36,258] [INFO] [pipeline.Retrieval.Document.document_crawler] [DocumentCrawler] [360ONE] 295 links found on https://www.bseindia.com/corporates/ann.html?scripcd=542772
+[2026-07-16 17:47:46,962] [INFO] [httpx] HTTP Request: GET https://beta.bseindia.com/index.html "HTTP/1.1 200 OK"
+[2026-07-16 17:47:46,983] [INFO] [pipeline.Retrieval.Document.document_crawler] [DocumentCrawler] [360ONE] downloaded: index.html
+[2026-07-16 17:47:47,989] [WARNING] [pipeline.Retrieval.Document.document_crawler] [DocumentCrawler] [360ONE] unexpected error downloading /downloads1/EnhancedFeaturesMobileApplicationDepositories.pdf: Request URL is missing an 'http://' or 'https://' protocol.
+[2026-07-16 17:47:47,993] [WARNING] [pipeline.Retrieval.Document.document_crawler] [DocumentCrawler] [360ONE] failed to download /downloads1/EnhancedFeaturesMobileApplicationDepositories.pdf: Request URL is missing an 'http://' or 'https://' protocol.
+[2026-07-16 17:47:49,002] [WARNING] [pipeline.Retrieval.Document.document_crawler] [DocumentCrawler] [360ONE] unexpected error downloading /downloads1/Registration-process-Research_Analyst.pdf: Request URL is missing an 'http://' or 'https://' protocol.
+[2026-07-16 17:47:49,002] [WARNING] [pipeline.Retrieval.Document.document_crawler] [DocumentCrawler] [360ONE] failed to download /downloads1/Registration-process-Research_Analyst.pdf: Request URL is missing an 'http://' or 'https://' protocol.
+[2026-07-16 17:48:15,053] [WARNING] [pipeline.Retrieval.Document.document_crawler] [DocumentCrawler] [360ONE] unexpected error downloading /downloads1/LODR_2015_&Agreement.zip: Request URL is missing an 'http://' or 'https://' protocol.
+[2026-07-16 17:48:15,053] [WARNING] [pipeline.Retrieval.Document.document_crawler] [DocumentCrawler] [360ONE] failed to download /downloads1/LODR_2015_&Agreement.zip: Request URL is missing an 'http://' or 'https://' protocol.
+[2026-07-16 17:49:11,144] [WARNING] [pipeline.Retrieval.Document.document_crawler] [DocumentCrawler] [360ONE] unexpected error downloading /downloads1/FAQ_on_Listing.pdf: Request URL is missing an 'http://' or 'https://' protocol.
+[2026-07-16 17:49:11,145] [WARNING] [pipeline.Retrieval.Document.document_crawler] [DocumentCrawler] [360ONE] failed to download /downloads1/FAQ_on_Listing.pdf: Request URL is missing an 'http://' or 'https://' protocol.
+[2026-07-16 17:49:12,154] [WARNING] [pipeline.Retrieval.Document.document_crawler] [DocumentCrawler] [360ONE] unexpected error downloading /downloads1/BRR_FAQs%2010052013.pdf: Request URL is missing an 'http://' or 'https://' protocol.
+[2026-07-16 17:49:12,155] [WARNING] [pipeline.Retrieval.Document.document_crawler] [DocumentCrawler] [360ONE] failed to download /downloads1/BRR_FAQs%2010052013.pdf: Request URL is missing an 'http://' or 'https://' protocol.
+[2026-07-16 17:49:14,166] [WARNING] [pipeline.Retrieval.Document.document_crawler] [DocumentCrawler] [360ONE] unexpected error downloading /download/Suspended_companies_02082016.zip: Request URL is missing an 'http://' or 'https://' protocol.
+[2026-07-16 17:49:14,167] [WARNING] [pipeline.Retrieval.Document.document_crawler] [DocumentCrawler] [360ONE] failed to download /download/Suspended_companies_02082016.zip: Request URL is missing an 'http://' or 'https://' protocol.
+[2026-07-16 17:49:15,180] [WARNING] [pipeline.Retrieval.Document.document_crawler] [DocumentCrawler] [360ONE] unexpected error downloading /downloads1/IBC_file.zip: Request URL is missing an 'http://' or 'https://' protocol.
+[2026-07-16 17:49:15,180] [WARNING] [pipeline.Retrieval.Document.document_crawler] [DocumentCrawler] [360ONE] failed to download /downloads1/IBC_file.zip: Request URL is missing an 'http://' or 'https://' protocol.
+[2026-07-16 17:49:18,192] [WARNING] [pipeline.Retrieval.Document.document_crawler] [DocumentCrawler] [360ONE] unexpected error downloading /downloads1/Non_Compliance_of_DN_Database.pdf: Request URL is missing an 'http://' or 'https://' protocol.
+[2026-07-16 17:49:18,192] [WARNING] [pipeline.Retrieval.Document.document_crawler] [DocumentCrawler] [360ONE] failed to download /downloads1/Non_Compliance_of_DN_Database.pdf: Request URL is missing an 'http://' or 'https://' protocol.
+[2026-07-16 17:49:36,221] [WARNING] [pipeline.Retrieval.Document.document_crawler] [DocumentCrawler] [360ONE] unexpected error downloading /xml-data/corpfiling/AttachLive/c180ce6e-963f-45ad-babf-2e8b98a752e9.pdf: Request URL is missing an 'http://' or 'https://' protocol.
+[2026-07-16 17:49:36,222] [WARNING] [pipeline.Retrieval.Document.document_crawler] [DocumentCrawler] [360ONE] failed to download /xml-data/corpfiling/AttachLive/c180ce6e-963f-45ad-babf-2e8b98a752e9.pdf: Request URL is missing an 'http://' or 'https://' protocol.
+[2026-07-16 17:49:38,229] [WARNING] [pipeline.Retrieval.Document.document_crawler] [DocumentCrawler] [360ONE] unexpected error downloading /xml-data/corpfiling/AttachLive/9cd62125-e539-4905-a449-510cdbc9d40f.pdf: Request URL is missing an 'http://' or 'https://' protocol.
+[2026-07-16 17:49:38,230] [WARNING] [pipeline.Retrieval.Document.document_crawler] [DocumentCrawler] [360ONE] failed to download /xml-data/corpfiling/AttachLive/9cd62125-e539-4905-a449-510cdbc9d40f.pdf: Request URL is missing an 'http://' or 'https://' protocol.
+[2026-07-16 17:49:40,242] [WARNING] [pipeline.Retrieval.Document.document_crawler] [DocumentCrawler] [360ONE] unexpected error downloading /xml-data/corpfiling/AttachLive/90b8e03d-903d-4b33-928b-e8e8bca435c7.pdf: Request URL is missing an 'http://' or 'https://' protocol.
+[2026-07-16 17:49:40,242] [WARNING] [pipeline.Retrieval.Document.document_crawler] [DocumentCrawler] [360ONE] failed to download /xml-data/corpfiling/AttachLive/90b8e03d-903d-4b33-928b-e8e8bca435c7.pdf: Request URL is missing an 'http://' or 'https://' protocol.
+[2026-07-16 17:49:42,252] [WARNING] [pipeline.Retrieval.Document.document_crawler] [DocumentCrawler] [360ONE] unexpected error downloading /xml-data/corpfiling/AttachLive/d18e4885-2b18-463a-853b-862b7c5bdf48.pdf: Request URL is missing an 'http://' or 'https://' protocol.
+[2026-07-16 17:49:42,253] [WARNING] [pipeline.Retrieval.Document.document_crawler] [DocumentCrawler] [360ONE] failed to download /xml-data/corpfiling/AttachLive/d18e4885-2b18-463a-853b-862b7c5bdf48.pdf: Request URL is missing an 'http://' or 'https://' protocol.
+[2026-07-16 17:49:44,264] [WARNING] [pipeline.Retrieval.Document.document_crawler] [DocumentCrawler] [360ONE] unexpected error downloading /xml-data/corpfiling/AttachLive/44ec2998-a341-4843-a729-edfc4e77a998.pdf: Request URL is missing an 'http://' or 'https://' protocol.
+[2026-07-16 17:49:44,264] [WARNING] [pipeline.Retrieval.Document.document_crawler] [DocumentCrawler] [360ONE] failed to download /xml-data/corpfiling/AttachLive/44ec2998-a341-4843-a729-edfc4e77a998.pdf: Request URL is missing an 'http://' or 'https://' protocol.
+[2026-07-16 17:49:46,277] [WARNING] [pipeline.Retrieval.Document.document_crawler] [DocumentCrawler] [360ONE] unexpected error downloading /xml-data/corpfiling/AttachLive/32240710-4037-49fe-9015-37bc0ba7b188.pdf: Request URL is missing an 'http://' or 'https://' protocol.
+[2026-07-16 17:49:46,277] [WARNING] [pipeline.Retrieval.Document.document_crawler] [DocumentCrawler] [360ONE] failed to download /xml-data/corpfiling/AttachLive/32240710-4037-49fe-9015-37bc0ba7b188.pdf: Request URL is missing an 'http://' or 'https://' protocol.
+[2026-07-16 17:49:48,287] [WARNING] [pipeline.Retrieval.Document.document_crawler] [DocumentCrawler] [360ONE] unexpected error downloading /xml-data/corpfiling/AttachLive/56db94bc-3625-4a51-8ebb-3e1a68e7862c.pdf: Request URL is missing an 'http://' or 'https://' protocol.
+[2026-07-16 17:49:48,288] [WARNING] [pipeline.Retrieval.Document.document_crawler] [DocumentCrawler] [360ONE] failed to download /xml-data/corpfiling/AttachLive/56db94bc-3625-4a51-8ebb-3e1a68e7862c.pdf: Request URL is missing an 'http://' or 'https://' protocol.
+[2026-07-16 17:49:50,300] [WARNING] [pipeline.Retrieval.Document.document_crawler] [DocumentCrawler] [360ONE] unexpected error downloading /xml-data/corpfiling/AttachLive/d3a5617f-5b5e-4478-be11-34ddb5ad4e37.pdf: Request URL is missing an 'http://' or 'https://' protocol.
+[2026-07-16 17:49:50,300] [WARNING] [pipeline.Retrieval.Document.document_crawler] [DocumentCrawler] [360ONE] failed to download /xml-data/corpfiling/AttachLive/d3a5617f-5b5e-4478-be11-34ddb5ad4e37.pdf: Request URL is missing an 'http://' or 'https://' protocol.
+[2026-07-16 17:49:52,308] [WARNING] [pipeline.Retrieval.Document.document_crawler] [DocumentCrawler] [360ONE] unexpected error downloading /xml-data/corpfiling/AttachLive/578a62a0-e0dd-442b-afb3-71c14f8dd622.pdf: Request URL is missing an 'http://' or 'https://' protocol.
+[2026-07-16 17:49:52,308] [WARNING] [pipeline.Retrieval.Document.document_crawler] [DocumentCrawler] [360ONE] failed to download /xml-data/corpfiling/AttachLive/578a62a0-e0dd-442b-afb3-71c14f8dd622.pdf: Request URL is missing an 'http://' or 'https://' protocol.
+[2026-07-16 17:49:54,316] [WARNING] [pipeline.Retrieval.Document.document_crawler] [DocumentCrawler] [360ONE] unexpected error downloading /xml-data/corpfiling/AttachLive/b996a4f4-5c1e-4eb7-9427-901a7c2e8361.pdf: Request URL is missing an 'http://' or 'https://' protocol.
+[2026-07-16 17:49:54,317] [WARNING] [pipeline.Retrieval.Document.document_crawler] [DocumentCrawler] [360ONE] failed to download /xml-data/corpfiling/AttachLive/b996a4f4-5c1e-4eb7-9427-901a7c2e8361.pdf: Request URL is missing an 'http://' or 'https://' protocol.
+[2026-07-16 17:49:56,326] [WARNING] [pipeline.Retrieval.Document.document_crawler] [DocumentCrawler] [360ONE] unexpected error downloading /xml-data/corpfiling/AttachLive/42ca4bba-2501-4bb2-8b1d-7a164ba4284f.pdf: Request URL is missing an 'http://' or 'https://' protocol.
+[2026-07-16 17:49:56,326] [WARNING] [pipeline.Retrieval.Document.document_crawler] [DocumentCrawler] [360ONE] failed to download /xml-data/corpfiling/AttachLive/42ca4bba-2501-4bb2-8b1d-7a164ba4284f.pdf: Request URL is missing an 'http://' or 'https://' protocol.
+[2026-07-16 17:49:58,335] [WARNING] [pipeline.Retrieval.Document.document_crawler] [DocumentCrawler] [360ONE] unexpected error downloading /xml-data/corpfiling/AttachLive/b8a422ca-653d-4461-a8fb-340d43edaca0.pdf: Request URL is missing an 'http://' or 'https://' protocol.
+[2026-07-16 17:49:58,336] [WARNING] [pipeline.Retrieval.Document.document_crawler] [DocumentCrawler] [360ONE] failed to download /xml-data/corpfiling/AttachLive/b8a422ca-653d-4461-a8fb-340d43edaca0.pdf: Request URL is missing an 'http://' or 'https://' protocol.
+[2026-07-16 17:50:00,346] [WARNING] [pipeline.Retrieval.Document.document_crawler] [DocumentCrawler] [360ONE] unexpected error downloading /xml-data/corpfiling/AttachLive/4355f7ee-e170-4296-9df6-15127c2d3bb8.pdf: Request URL is missing an 'http://' or 'https://' protocol.
+[2026-07-16 17:50:00,347] [WARNING] [pipeline.Retrieval.Document.document_crawler] [DocumentCrawler] [360ONE] failed to download /xml-data/corpfiling/AttachLive/4355f7ee-e170-4296-9df6-15127c2d3bb8.pdf: Request URL is missing an 'http://' or 'https://' protocol.
+[2026-07-16 17:50:02,353] [WARNING] [pipeline.Retrieval.Document.document_crawler] [DocumentCrawler] [360ONE] unexpected error downloading /xml-data/corpfiling/AttachLive/16061be3-c7a9-4adf-99ad-df650f474387.pdf: Request URL is missing an 'http://' or 'https://' protocol.
+[2026-07-16 17:50:02,353] [WARNING] [pipeline.Retrieval.Document.document_crawler] [DocumentCrawler] [360ONE] failed to download /xml-data/corpfiling/AttachLive/16061be3-c7a9-4adf-99ad-df650f474387.pdf: Request URL is missing an 'http://' or 'https://' protocol.
+[2026-07-16 17:50:04,362] [WARNING] [pipeline.Retrieval.Document.document_crawler] [DocumentCrawler] [360ONE] unexpected error downloading /xml-data/corpfiling/AttachLive/1d713fd3-4085-4294-9e00-b9dce700c2ab.pdf: Request URL is missing an 'http://' or 'https://' protocol.
+[2026-07-16 17:50:04,363] [WARNING] [pipeline.Retrieval.Document.document_crawler] [DocumentCrawler] [360ONE] failed to download /xml-data/corpfiling/AttachLive/1d713fd3-4085-4294-9e00-b9dce700c2ab.pdf: Request URL is missing an 'http://' or 'https://' protocol.
+[2026-07-16 17:50:06,373] [WARNING] [pipeline.Retrieval.Document.document_crawler] [DocumentCrawler] [360ONE] unexpected error downloading /xml-data/corpfiling/AttachLive/f14dd80c-dfdf-4417-91de-af71e2460806.pdf: Request URL is missing an 'http://' or 'https://' protocol.
+[2026-07-16 17:50:06,373] [WARNING] [pipeline.Retrieval.Document.document_crawler] [DocumentCrawler] [360ONE] failed to download /xml-data/corpfiling/AttachLive/f14dd80c-dfdf-4417-91de-af71e2460806.pdf: Request URL is missing an 'http://' or 'https://' protocol.
+[2026-07-16 17:50:08,384] [WARNING] [pipeline.Retrieval.Document.document_crawler] [DocumentCrawler] [360ONE] unexpected error downloading /xml-data/corpfiling/AttachLive/f5a2cad3-c9c5-48b1-9c65-db0c2017935a.pdf: Request URL is missing an 'http://' or 'https://' protocol.
+[2026-07-16 17:50:08,385] [WARNING] [pipeline.Retrieval.Document.document_crawler] [DocumentCrawler] [360ONE] failed to download /xml-data/corpfiling/AttachLive/f5a2cad3-c9c5-48b1-9c65-db0c2017935a.pdf: Request URL is missing an 'http://' or 'https://' protocol.
+[2026-07-16 17:50:10,396] [WARNING] [pipeline.Retrieval.Document.document_crawler] [DocumentCrawler] [360ONE] unexpected error downloading /xml-data/corpfiling/AttachLive/1d2162b7-9a12-4ef5-b621-5a30e2364c2f.pdf: Request URL is missing an 'http://' or 'https://' protocol.
+[2026-07-16 17:50:10,396] [WARNING] [pipeline.Retrieval.Document.document_crawler] [DocumentCrawler] [360ONE] failed to download /xml-data/corpfiling/AttachLive/1d2162b7-9a12-4ef5-b621-5a30e2364c2f.pdf: Request URL is missing an 'http://' or 'https://' protocol.
+[2026-07-16 17:50:12,403] [WARNING] [pipeline.Retrieval.Document.document_crawler] [DocumentCrawler] [360ONE] unexpected error downloading /xml-data/corpfiling/AttachLive/cb984eea-0f01-4339-9cf9-b1946e60f65a.pdf: Request URL is missing an 'http://' or 'https://' protocol.
+[2026-07-16 17:50:12,404] [WARNING] [pipeline.Retrieval.Document.document_crawler] [DocumentCrawler] [360ONE] failed to download /xml-data/corpfiling/AttachLive/cb984eea-0f01-4339-9cf9-b1946e60f65a.pdf: Request URL is missing an 'http://' or 'https://' protocol.
+[2026-07-16 17:50:14,415] [WARNING] [pipeline.Retrieval.Document.document_crawler] [DocumentCrawler] [360ONE] unexpected error downloading /xml-data/corpfiling/AttachLive/6433d262-e456-40f6-acdb-e57e7bfebf4d.pdf: Request URL is missing an 'http://' or 'https://' protocol.
+[2026-07-16 17:50:14,415] [WARNING] [pipeline.Retrieval.Document.document_crawler] [DocumentCrawler] [360ONE] failed to download /xml-data/corpfiling/AttachLive/6433d262-e456-40f6-acdb-e57e7bfebf4d.pdf: Request URL is missing an 'http://' or 'https://' protocol.
+[2026-07-16 17:50:16,426] [WARNING] [pipeline.Retrieval.Document.document_crawler] [DocumentCrawler] [360ONE] unexpected error downloading /xml-data/corpfiling/AttachLive/647188d3-7096-40a7-8345-96d02ff1c5a9.pdf: Request URL is missing an 'http://' or 'https://' protocol.
+[2026-07-16 17:50:16,427] [WARNING] [pipeline.Retrieval.Document.document_crawler] [DocumentCrawler] [360ONE] failed to download /xml-data/corpfiling/AttachLive/647188d3-7096-40a7-8345-96d02ff1c5a9.pdf: Request URL is missing an 'http://' or 'https://' protocol.
+[2026-07-16 17:50:18,435] [WARNING] [pipeline.Retrieval.Document.document_crawler] [DocumentCrawler] [360ONE] unexpected error downloading /xml-data/corpfiling/AttachLive/4ca118e3-a1de-43a5-81e4-0aedb9072b6e.pdf: Request URL is missing an 'http://' or 'https://' protocol.
+[2026-07-16 17:50:18,436] [WARNING] [pipeline.Retrieval.Document.document_crawler] [DocumentCrawler] [360ONE] failed to download /xml-data/corpfiling/AttachLive/4ca118e3-a1de-43a5-81e4-0aedb9072b6e.pdf: Request URL is missing an 'http://' or 'https://' protocol.
+[2026-07-16 17:50:20,442] [WARNING] [pipeline.Retrieval.Document.document_crawler] [DocumentCrawler] [360ONE] unexpected error downloading /xml-data/corpfiling/AttachLive/b614534e-3d89-4895-888c-464794b65953.pdf: Request URL is missing an 'http://' or 'https://' protocol.
+[2026-07-16 17:50:20,442] [WARNING] [pipeline.Retrieval.Document.document_crawler] [DocumentCrawler] [360ONE] failed to download /xml-data/corpfiling/AttachLive/b614534e-3d89-4895-888c-464794b65953.pdf: Request URL is missing an 'http://' or 'https://' protocol.
+[2026-07-16 17:50:22,451] [WARNING] [pipeline.Retrieval.Document.document_crawler] [DocumentCrawler] [360ONE] unexpected error downloading /xml-data/corpfiling/AttachLive/580c283d-0b37-4cf4-9f81-774c7191929a.pdf: Request URL is missing an 'http://' or 'https://' protocol.
+[2026-07-16 17:50:22,452] [WARNING] [pipeline.Retrieval.Document.document_crawler] [DocumentCrawler] [360ONE] failed to download /xml-data/corpfiling/AttachLive/580c283d-0b37-4cf4-9f81-774c7191929a.pdf: Request URL is missing an 'http://' or 'https://' protocol.
+[2026-07-16 17:50:24,458] [WARNING] [pipeline.Retrieval.Document.document_crawler] [DocumentCrawler] [360ONE] unexpected error downloading /xml-data/corpfiling/AttachLive/ae8aa36e-3c4a-4385-8830-e5fa73b36c3e.pdf: Request URL is missing an 'http://' or 'https://' protocol.
+[2026-07-16 17:50:24,459] [WARNING] [pipeline.Retrieval.Document.document_crawler] [DocumentCrawler] [360ONE] failed to download /xml-data/corpfiling/AttachLive/ae8aa36e-3c4a-4385-8830-e5fa73b36c3e.pdf: Request URL is missing an 'http://' or 'https://' protocol.
+[2026-07-16 17:50:26,466] [WARNING] [pipeline.Retrieval.Document.document_crawler] [DocumentCrawler] [360ONE] unexpected error downloading /xml-data/corpfiling/AttachLive/d0395576-ddd8-46c3-860e-928940288ba5.pdf: Request URL is missing an 'http://' or 'https://' protocol.
+[2026-07-16 17:50:26,466] [WARNING] [pipeline.Retrieval.Document.document_crawler] [DocumentCrawler] [360ONE] failed to download /xml-data/corpfiling/AttachLive/d0395576-ddd8-46c3-860e-928940288ba5.pdf: Request URL is missing an 'http://' or 'https://' protocol.
+[2026-07-16 17:50:28,479] [WARNING] [pipeline.Retrieval.Document.document_crawler] [DocumentCrawler] [360ONE] unexpected error downloading /xml-data/corpfiling/AttachLive/efd70faa-adcd-4496-972e-dd466353ab24.pdf: Request URL is missing an 'http://' or 'https://' protocol.
+[2026-07-16 17:50:28,480] [WARNING] [pipeline.Retrieval.Document.document_crawler] [DocumentCrawler] [360ONE] failed to download /xml-data/corpfiling/AttachLive/efd70faa-adcd-4496-972e-dd466353ab24.pdf: Request URL is missing an 'http://' or 'https://' protocol.
+[2026-07-16 17:50:30,489] [WARNING] [pipeline.Retrieval.Document.document_crawler] [DocumentCrawler] [360ONE] unexpected error downloading /xml-data/corpfiling/AttachLive/de07597e-79a8-4aa2-be5d-65ebad8fd60c.pdf: Request URL is missing an 'http://' or 'https://' protocol.
+[2026-07-16 17:50:30,489] [WARNING] [pipeline.Retrieval.Document.document_crawler] [DocumentCrawler] [360ONE] failed to download /xml-data/corpfiling/AttachLive/de07597e-79a8-4aa2-be5d-65ebad8fd60c.pdf: Request URL is missing an 'http://' or 'https://' protocol.
+[2026-07-16 17:50:32,498] [WARNING] [pipeline.Retrieval.Document.document_crawler] [DocumentCrawler] [360ONE] unexpected error downloading /xml-data/corpfiling/AttachLive/847984da-6f37-4b8d-b295-e9dbcd401c1b.pdf: Request URL is missing an 'http://' or 'https://' protocol.
+[2026-07-16 17:50:32,499] [WARNING] [pipeline.Retrieval.Document.document_crawler] [DocumentCrawler] [360ONE] failed to download /xml-data/corpfiling/AttachLive/847984da-6f37-4b8d-b295-e9dbcd401c1b.pdf: Request URL is missing an 'http://' or 'https://' protocol.
+[2026-07-16 17:50:34,511] [WARNING] [pipeline.Retrieval.Document.document_crawler] [DocumentCrawler] [360ONE] unexpected error downloading /xml-data/corpfiling/AttachLive/800a1c21-360e-4e28-b484-74afafec88b0.pdf: Request URL is missing an 'http://' or 'https://' protocol.
+[2026-07-16 17:50:34,512] [WARNING] [pipeline.Retrieval.Document.document_crawler] [DocumentCrawler] [360ONE] failed to download /xml-data/corpfiling/AttachLive/800a1c21-360e-4e28-b484-74afafec88b0.pdf: Request URL is missing an 'http://' or 'https://' protocol.
+[2026-07-16 17:50:36,518] [WARNING] [pipeline.Retrieval.Document.document_crawler] [DocumentCrawler] [360ONE] unexpected error downloading /xml-data/corpfiling/AttachLive/c005dd0a-b5cf-4e58-8237-240521ce31f1.pdf: Request URL is missing an 'http://' or 'https://' protocol.
+[2026-07-16 17:50:36,519] [WARNING] [pipeline.Retrieval.Document.document_crawler] [DocumentCrawler] [360ONE] failed to download /xml-data/corpfiling/AttachLive/c005dd0a-b5cf-4e58-8237-240521ce31f1.pdf: Request URL is missing an 'http://' or 'https://' protocol.
+[2026-07-16 17:50:38,526] [WARNING] [pipeline.Retrieval.Document.document_crawler] [DocumentCrawler] [360ONE] unexpected error downloading /xml-data/corpfiling/AttachLive/d48e9976-8188-4972-8d5f-8e13c2df726d.pdf: Request URL is missing an 'http://' or 'https://' protocol.
+[2026-07-16 17:50:38,527] [WARNING] [pipeline.Retrieval.Document.document_crawler] [DocumentCrawler] [360ONE] failed to download /xml-data/corpfiling/AttachLive/d48e9976-8188-4972-8d5f-8e13c2df726d.pdf: Request URL is missing an 'http://' or 'https://' protocol.
+[2026-07-16 17:50:40,536] [WARNING] [pipeline.Retrieval.Document.document_crawler] [DocumentCrawler] [360ONE] unexpected error downloading /xml-data/corpfiling/AttachLive/905fad63-d96c-40c3-bcfd-787ceec427f9.pdf: Request URL is missing an 'http://' or 'https://' protocol.
+[2026-07-16 17:50:40,537] [WARNING] [pipeline.Retrieval.Document.document_crawler] [DocumentCrawler] [360ONE] failed to download /xml-data/corpfiling/AttachLive/905fad63-d96c-40c3-bcfd-787ceec427f9.pdf: Request URL is missing an 'http://' or 'https://' protocol.
+[2026-07-16 17:50:42,544] [WARNING] [pipeline.Retrieval.Document.document_crawler] [DocumentCrawler] [360ONE] unexpected error downloading /xml-data/corpfiling/AttachLive/31be9db7-404f-45aa-b07f-94f97577e50e.pdf: Request URL is missing an 'http://' or 'https://' protocol.
+[2026-07-16 17:50:42,545] [WARNING] [pipeline.Retrieval.Document.document_crawler] [DocumentCrawler] [360ONE] failed to download /xml-data/corpfiling/AttachLive/31be9db7-404f-45aa-b07f-94f97577e50e.pdf: Request URL is missing an 'http://' or 'https://' protocol.
+[2026-07-16 17:50:44,552] [WARNING] [pipeline.Retrieval.Document.document_crawler] [DocumentCrawler] [360ONE] unexpected error downloading /xml-data/corpfiling/AttachLive/87ec4493-3fa0-48b4-a690-bf745a14ef1c.pdf: Request URL is missing an 'http://' or 'https://' protocol.
+[2026-07-16 17:50:44,552] [WARNING] [pipeline.Retrieval.Document.document_crawler] [DocumentCrawler] [360ONE] failed to download /xml-data/corpfiling/AttachLive/87ec4493-3fa0-48b4-a690-bf745a14ef1c.pdf: Request URL is missing an 'http://' or 'https://' protocol.
+[2026-07-16 17:50:46,568] [WARNING] [pipeline.Retrieval.Document.document_crawler] [DocumentCrawler] [360ONE] unexpected error downloading /xml-data/corpfiling/AttachLive/49c310f1-7034-4d12-9daa-e82002b3e0bf.pdf: Request URL is missing an 'http://' or 'https://' protocol.
+[2026-07-16 17:50:46,569] [WARNING] [pipeline.Retrieval.Document.document_crawler] [DocumentCrawler] [360ONE] failed to download /xml-data/corpfiling/AttachLive/49c310f1-7034-4d12-9daa-e82002b3e0bf.pdf: Request URL is missing an 'http://' or 'https://' protocol.
+[2026-07-16 17:50:48,579] [WARNING] [pipeline.Retrieval.Document.document_crawler] [DocumentCrawler] [360ONE] unexpected error downloading /xml-data/corpfiling/AttachLive/3a31796d-ca07-4a5d-9b4f-b0c10e718948.pdf: Request URL is missing an 'http://' or 'https://' protocol.
+[2026-07-16 17:50:48,580] [WARNING] [pipeline.Retrieval.Document.document_crawler] [DocumentCrawler] [360ONE] failed to download /xml-data/corpfiling/AttachLive/3a31796d-ca07-4a5d-9b4f-b0c10e718948.pdf: Request URL is missing an 'http://' or 'https://' protocol.
+[2026-07-16 17:50:50,587] [WARNING] [pipeline.Retrieval.Document.document_crawler] [DocumentCrawler] [360ONE] unexpected error downloading /xml-data/corpfiling/AttachLive/4323ebbf-5caa-486c-ab7a-394663819251.pdf: Request URL is missing an 'http://' or 'https://' protocol.
+[2026-07-16 17:50:50,587] [WARNING] [pipeline.Retrieval.Document.document_crawler] [DocumentCrawler] [360ONE] failed to download /xml-data/corpfiling/AttachLive/4323ebbf-5caa-486c-ab7a-394663819251.pdf: Request URL is missing an 'http://' or 'https://' protocol.
+[2026-07-16 17:50:52,597] [WARNING] [pipeline.Retrieval.Document.document_crawler] [DocumentCrawler] [360ONE] unexpected error downloading /xml-data/corpfiling/AttachLive/2d00e875-af1e-4b4e-8774-529cb7bb512e.pdf: Request URL is missing an 'http://' or 'https://' protocol.
+[2026-07-16 17:50:52,598] [WARNING] [pipeline.Retrieval.Document.document_crawler] [DocumentCrawler] [360ONE] failed to download /xml-data/corpfiling/AttachLive/2d00e875-af1e-4b4e-8774-529cb7bb512e.pdf: Request URL is missing an 'http://' or 'https://' protocol.
+[2026-07-16 17:50:54,606] [WARNING] [pipeline.Retrieval.Document.document_crawler] [DocumentCrawler] [360ONE] unexpected error downloading /xml-data/corpfiling/AttachLive/73b80268-2feb-4aef-bce8-8f3f9dd773f4.pdf: Request URL is missing an 'http://' or 'https://' protocol.
+[2026-07-16 17:50:54,607] [WARNING] [pipeline.Retrieval.Document.document_crawler] [DocumentCrawler] [360ONE] failed to download /xml-data/corpfiling/AttachLive/73b80268-2feb-4aef-bce8-8f3f9dd773f4.pdf: Request URL is missing an 'http://' or 'https://' protocol.
+[2026-07-16 17:50:56,614] [WARNING] [pipeline.Retrieval.Document.document_crawler] [DocumentCrawler] [360ONE] unexpected error downloading /xml-data/corpfiling/AttachLive/c7e7b74d-e988-463f-89e9-38a97dd07aa0.pdf: Request URL is missing an 'http://' or 'https://' protocol.
+[2026-07-16 17:50:56,614] [WARNING] [pipeline.Retrieval.Document.document_crawler] [DocumentCrawler] [360ONE] failed to download /xml-data/corpfiling/AttachLive/c7e7b74d-e988-463f-89e9-38a97dd07aa0.pdf: Request URL is missing an 'http://' or 'https://' protocol.
+[2026-07-16 17:50:58,622] [WARNING] [pipeline.Retrieval.Document.document_crawler] [DocumentCrawler] [360ONE] unexpected error downloading /xml-data/corpfiling/AttachLive/8b02b321-3e66-48a6-b58a-83cb7701a01c.pdf: Request URL is missing an 'http://' or 'https://' protocol.
+[2026-07-16 17:50:58,622] [WARNING] [pipeline.Retrieval.Document.document_crawler] [DocumentCrawler] [360ONE] failed to download /xml-data/corpfiling/AttachLive/8b02b321-3e66-48a6-b58a-83cb7701a01c.pdf: Request URL is missing an 'http://' or 'https://' protocol.
+[2026-07-16 17:51:00,630] [WARNING] [pipeline.Retrieval.Document.document_crawler] [DocumentCrawler] [360ONE] unexpected error downloading /xml-data/corpfiling/AttachLive/669fc65a-5926-40f9-a756-27a43aff30b7.pdf: Request URL is missing an 'http://' or 'https://' protocol.
+[2026-07-16 17:51:00,630] [WARNING] [pipeline.Retrieval.Document.document_crawler] [DocumentCrawler] [360ONE] failed to download /xml-data/corpfiling/AttachLive/669fc65a-5926-40f9-a756-27a43aff30b7.pdf: Request URL is missing an 'http://' or 'https://' protocol.
+[2026-07-16 17:51:02,637] [WARNING] [pipeline.Retrieval.Document.document_crawler] [DocumentCrawler] [360ONE] unexpected error downloading /xml-data/corpfiling/AttachLive/c6954315-883c-4ce8-8b8b-cc291273fc65.pdf: Request URL is missing an 'http://' or 'https://' protocol.
+[2026-07-16 17:51:02,638] [WARNING] [pipeline.Retrieval.Document.document_crawler] [DocumentCrawler] [360ONE] failed to download /xml-data/corpfiling/AttachLive/c6954315-883c-4ce8-8b8b-cc291273fc65.pdf: Request URL is missing an 'http://' or 'https://' protocol.
+[2026-07-16 17:51:04,645] [WARNING] [pipeline.Retrieval.Document.document_crawler] [DocumentCrawler] [360ONE] unexpected error downloading /xml-data/corpfiling/AttachLive/eab5d55d-cad9-4d27-836a-71b362273da6.pdf: Request URL is missing an 'http://' or 'https://' protocol.
+[2026-07-16 17:51:04,645] [WARNING] [pipeline.Retrieval.Document.document_crawler] [DocumentCrawler] [360ONE] failed to download /xml-data/corpfiling/AttachLive/eab5d55d-cad9-4d27-836a-71b362273da6.pdf: Request URL is missing an 'http://' or 'https://' protocol.
+[2026-07-16 17:51:06,653] [WARNING] [pipeline.Retrieval.Document.document_crawler] [DocumentCrawler] [360ONE] unexpected error downloading /xml-data/corpfiling/AttachLive/70341ec7-9cd2-4eae-b257-d6abe6fbe7f5.pdf: Request URL is missing an 'http://' or 'https://' protocol.
+[2026-07-16 17:51:06,654] [WARNING] [pipeline.Retrieval.Document.document_crawler] [DocumentCrawler] [360ONE] failed to download /xml-data/corpfiling/AttachLive/70341ec7-9cd2-4eae-b257-d6abe6fbe7f5.pdf: Request URL is missing an 'http://' or 'https://' protocol.
+[2026-07-16 17:51:08,665] [WARNING] [pipeline.Retrieval.Document.document_crawler] [DocumentCrawler] [360ONE] unexpected error downloading /xml-data/corpfiling/AttachLive/c7c5d793-0024-4e34-b604-b7189956b2b7.pdf: Request URL is missing an 'http://' or 'https://' protocol.
+[2026-07-16 17:51:08,666] [WARNING] [pipeline.Retrieval.Document.document_crawler] [DocumentCrawler] [360ONE] failed to download /xml-data/corpfiling/AttachLive/c7c5d793-0024-4e34-b604-b7189956b2b7.pdf: Request URL is missing an 'http://' or 'https://' protocol.
+[2026-07-16 17:51:10,676] [WARNING] [pipeline.Retrieval.Document.document_crawler] [DocumentCrawler] [360ONE] unexpected error downloading /xml-data/corpfiling/AttachLive/c98b0540-ff80-4c9a-92be-a2d989c86d85.pdf: Request URL is missing an 'http://' or 'https://' protocol.
+[2026-07-16 17:51:10,677] [WARNING] [pipeline.Retrieval.Document.document_crawler] [DocumentCrawler] [360ONE] failed to download /xml-data/corpfiling/AttachLive/c98b0540-ff80-4c9a-92be-a2d989c86d85.pdf: Request URL is missing an 'http://' or 'https://' protocol.
+[2026-07-16 17:51:12,686] [WARNING] [pipeline.Retrieval.Document.document_crawler] [DocumentCrawler] [360ONE] unexpected error downloading /xml-data/corpfiling/AttachLive/3211558e-3cb0-4275-a877-6856a4c63d7f.pdf: Request URL is missing an 'http://' or 'https://' protocol.
+[2026-07-16 17:51:12,686] [WARNING] [pipeline.Retrieval.Document.document_crawler] [DocumentCrawler] [360ONE] failed to download /xml-data/corpfiling/AttachLive/3211558e-3cb0-4275-a877-6856a4c63d7f.pdf: Request URL is missing an 'http://' or 'https://' protocol.
+[2026-07-16 17:51:14,696] [WARNING] [pipeline.Retrieval.Document.document_crawler] [DocumentCrawler] [360ONE] unexpected error downloading /xml-data/corpfiling/AttachLive/9e32e966-2b76-488e-b659-82d0e6ef7712.pdf: Request URL is missing an 'http://' or 'https://' protocol.
+[2026-07-16 17:51:14,696] [WARNING] [pipeline.Retrieval.Document.document_crawler] [DocumentCrawler] [360ONE] failed to download /xml-data/corpfiling/AttachLive/9e32e966-2b76-488e-b659-82d0e6ef7712.pdf: Request URL is missing an 'http://' or 'https://' protocol.
+[2026-07-16 17:51:19,206] [WARNING] [pipeline.Retrieval.Document.document_crawler] [DocumentCrawler] [360ONE] unexpected error downloading /downloads1/FAQInteroperabilityFrameworkamongstClearingCorporations.pdf: Request URL is missing an 'http://' or 'https://' protocol.
+[2026-07-16 17:51:19,207] [WARNING] [pipeline.Retrieval.Document.document_crawler] [DocumentCrawler] [360ONE] failed to download /downloads1/FAQInteroperabilityFrameworkamongstClearingCorporations.pdf: Request URL is missing an 'http://' or 'https://' protocol.
+[2026-07-16 17:52:35,828] [INFO] [pipeline.Retrieval.Document.document_crawler] [DocumentCrawler] [360ONE] fetching seed URL: https://www.nseindia.com/companies-listing/corporate-filings-announcements
+[2026-07-16 17:52:44,664] [INFO] [pipeline.Retrieval.Document.document_crawler] [DocumentCrawler] [360ONE] 1689 links found on https://www.nseindia.com/companies-listing/corporate-filings-announcements
+[2026-07-16 17:54:35,082] [INFO] [__main__] Mode: all symbols, all stages (365 symbols)
+[2026-07-16 17:54:35,082] [INFO] [pipeline.pipeline] Starting pipeline for 365 symbol(s) — stages: ['document_crawler', 'index']
+[2026-07-16 17:54:35,082] [INFO] [pipeline.pipeline] [Pipeline] [360ONE] starting
+[2026-07-16 17:54:35,082] [INFO] [pipeline.pipeline] [document_crawler] [360ONE] starting
+[2026-07-16 17:54:35,572] [INFO] [pipeline.Retrieval.Document.document_crawler] [DocumentCrawler] [360ONE] fetching seed URL: https://www.bseindia.com/corporates/ann.html?scripcd=542772
+[2026-07-16 17:54:42,964] [INFO] [pipeline.Retrieval.Document.document_crawler] [DocumentCrawler] [360ONE] 295 links found on https://www.bseindia.com/corporates/ann.html?scripcd=542772
+[2026-07-16 17:54:59,600] [INFO] [httpx] HTTP Request: GET https://www.bseindia.com/downloads1/EnhancedFeaturesMobileApplicationDepositories.pdf "HTTP/1.1 200 OK"
+[2026-07-16 17:55:00,107] [INFO] [pipeline.Retrieval.Document.document_crawler] [DocumentCrawler] [360ONE] downloaded: EnhancedFeaturesMobileApplicationDepositories.pdf
+[2026-07-16 17:55:01,976] [INFO] [httpx] HTTP Request: GET https://www.bseindia.com/downloads1/Registration-process-Research_Analyst.pdf "HTTP/1.1 200 OK"
+[2026-07-16 17:55:02,895] [INFO] [pipeline.Retrieval.Document.document_crawler] [DocumentCrawler] [360ONE] downloaded: Registration-process-Research_Analyst.pdf
+[2026-07-16 17:55:08,083] [ERROR] [pipeline.pipeline] [document_crawler] [360ONE] failed: Browser.close: Connection closed while reading from the driver
+Traceback (most recent call last):
+  File "/Users/arnav/Projects/Software/data_harvester/pipeline/pipeline.py", line 121, in run
+    raw_result = self._stage_fns[stage_name](symbol)
+                 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/arnav/Projects/Software/data_harvester/pipeline/pipeline.py", line 97, in _call_document_crawler
+    return run_document_crawler(symbol)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/arnav/Projects/Software/data_harvester/pipeline/Retrieval/Document/document_crawler.py", line 152, in run
+    return asyncio.run(_run_async(symbol))
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/arnav/.pyenv/versions/3.11.9/lib/python3.11/asyncio/runners.py", line 190, in run
+    return runner.run(main)
+           ^^^^^^^^^^^^^^^^
+  File "/Users/arnav/.pyenv/versions/3.11.9/lib/python3.11/asyncio/runners.py", line 118, in run
+    return self._loop.run_until_complete(task)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/arnav/.pyenv/versions/3.11.9/lib/python3.11/asyncio/base_events.py", line 654, in run_until_complete
+    return future.result()
+           ^^^^^^^^^^^^^^^
+  File "/Users/arnav/Projects/Software/data_harvester/pipeline/Retrieval/Document/document_crawler.py", line 172, in _run_async
+    return await process_single_company(symbol, urls)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/arnav/Projects/Software/data_harvester/pipeline/Retrieval/Document/document_crawler.py", line 193, in process_single_company
+    async with AsyncWebCrawler(config=browser_config) as crawler:
+  File "/Users/arnav/Projects/Software/data_harvester/.venv/lib/python3.11/site-packages/crawl4ai/async_webcrawler.py", line 203, in __aexit__
+    await self.close()
+  File "/Users/arnav/Projects/Software/data_harvester/.venv/lib/python3.11/site-packages/crawl4ai/async_webcrawler.py", line 197, in close
+    await self.crawler_strategy.__aexit__(None, None, None)
+  File "/Users/arnav/Projects/Software/data_harvester/.venv/lib/python3.11/site-packages/crawl4ai/async_crawler_strategy.py", line 125, in __aexit__
+    await self.close()
+  File "/Users/arnav/Projects/Software/data_harvester/.venv/lib/python3.11/site-packages/crawl4ai/async_crawler_strategy.py", line 142, in close
+    await self.browser_manager.close()
+  File "/Users/arnav/Projects/Software/data_harvester/.venv/lib/python3.11/site-packages/crawl4ai/browser_manager.py", line 2082, in close
+    await self.browser.close()
+  File "/Users/arnav/Projects/Software/data_harvester/.venv/lib/python3.11/site-packages/playwright/async_api/_generated.py", line 16034, in close
+    return mapping.from_maybe_impl(await self._impl_obj.close(reason=reason))
+                                   ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/arnav/Projects/Software/data_harvester/.venv/lib/python3.11/site-packages/playwright/_impl/_browser.py", line 244, in close
+    raise e
+  File "/Users/arnav/Projects/Software/data_harvester/.venv/lib/python3.11/site-packages/playwright/_impl/_browser.py", line 241, in close
+    await self._channel.send("close", None, {"reason": reason})
+  File "/Users/arnav/Projects/Software/data_harvester/.venv/lib/python3.11/site-packages/playwright/_impl/_connection.py", line 69, in send
+    return await self._connection.wrap_api_call(
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/arnav/Projects/Software/data_harvester/.venv/lib/python3.11/site-packages/playwright/_impl/_connection.py", line 559, in wrap_api_call
+    raise rewrite_error(error, f"{parsed_st['apiName']}: {error}") from None
+Exception: Browser.close: Connection closed while reading from the driver
+[2026-07-16 17:55:08,085] [ERROR] [pipeline.pipeline] [Pipeline] [360ONE] aborted — see failed stage above
+[2026-07-16 17:55:08,085] [INFO] [pipeline.pipeline] [Pipeline] [3MINDIA] starting
+[2026-07-16 17:55:08,085] [INFO] [pipeline.pipeline] [document_crawler] [3MINDIA] starting
+[2026-07-16 17:55:08,700] [INFO] [pipeline.Retrieval.Document.document_crawler] [DocumentCrawler] [3MINDIA] fetching seed URL: https://www.bseindia.com/corporates/ann.html?scripcd=523395
+[2026-07-16 17:55:10,504] [ERROR] [pipeline.pipeline] [document_crawler] [3MINDIA] failed: Browser.close: Connection closed while reading from the driver
+Traceback (most recent call last):
+  File "/Users/arnav/Projects/Software/data_harvester/pipeline/pipeline.py", line 121, in run
+    raw_result = self._stage_fns[stage_name](symbol)
+                 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/arnav/Projects/Software/data_harvester/pipeline/pipeline.py", line 97, in _call_document_crawler
+    return run_document_crawler(symbol)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/arnav/Projects/Software/data_harvester/pipeline/Retrieval/Document/document_crawler.py", line 152, in run
+    return asyncio.run(_run_async(symbol))
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/arnav/.pyenv/versions/3.11.9/lib/python3.11/asyncio/runners.py", line 190, in run
+    return runner.run(main)
+           ^^^^^^^^^^^^^^^^
+  File "/Users/arnav/.pyenv/versions/3.11.9/lib/python3.11/asyncio/runners.py", line 118, in run
+    return self._loop.run_until_complete(task)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/arnav/.pyenv/versions/3.11.9/lib/python3.11/asyncio/base_events.py", line 654, in run_until_complete
+    return future.result()
+           ^^^^^^^^^^^^^^^
+  File "/Users/arnav/Projects/Software/data_harvester/pipeline/Retrieval/Document/document_crawler.py", line 172, in _run_async
+    return await process_single_company(symbol, urls)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/arnav/Projects/Software/data_harvester/pipeline/Retrieval/Document/document_crawler.py", line 193, in process_single_company
+    async with AsyncWebCrawler(config=browser_config) as crawler:
+  File "/Users/arnav/Projects/Software/data_harvester/.venv/lib/python3.11/site-packages/crawl4ai/async_webcrawler.py", line 203, in __aexit__
+    await self.close()
+  File "/Users/arnav/Projects/Software/data_harvester/.venv/lib/python3.11/site-packages/crawl4ai/async_webcrawler.py", line 197, in close
+    await self.crawler_strategy.__aexit__(None, None, None)
+  File "/Users/arnav/Projects/Software/data_harvester/.venv/lib/python3.11/site-packages/crawl4ai/async_crawler_strategy.py", line 125, in __aexit__
+    await self.close()
+  File "/Users/arnav/Projects/Software/data_harvester/.venv/lib/python3.11/site-packages/crawl4ai/async_crawler_strategy.py", line 142, in close
+    await self.browser_manager.close()
+  File "/Users/arnav/Projects/Software/data_harvester/.venv/lib/python3.11/site-packages/crawl4ai/browser_manager.py", line 2082, in close
+    await self.browser.close()
+  File "/Users/arnav/Projects/Software/data_harvester/.venv/lib/python3.11/site-packages/playwright/async_api/_generated.py", line 16034, in close
+    return mapping.from_maybe_impl(await self._impl_obj.close(reason=reason))
+                                   ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/arnav/Projects/Software/data_harvester/.venv/lib/python3.11/site-packages/playwright/_impl/_browser.py", line 244, in close
+    raise e
+  File "/Users/arnav/Projects/Software/data_harvester/.venv/lib/python3.11/site-packages/playwright/_impl/_browser.py", line 241, in close
+    await self._channel.send("close", None, {"reason": reason})
+  File "/Users/arnav/Projects/Software/data_harvester/.venv/lib/python3.11/site-packages/playwright/_impl/_connection.py", line 69, in send
+    return await self._connection.wrap_api_call(
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/arnav/Projects/Software/data_harvester/.venv/lib/python3.11/site-packages/playwright/_impl/_connection.py", line 559, in wrap_api_call
+    raise rewrite_error(error, f"{parsed_st['apiName']}: {error}") from None
+Exception: Browser.close: Connection closed while reading from the driver
+[2026-07-16 17:55:10,505] [ERROR] [pipeline.pipeline] [Pipeline] [3MINDIA] aborted — see failed stage above
+[2026-07-16 17:55:10,505] [INFO] [pipeline.pipeline] [Pipeline] [ACC] starting
+[2026-07-16 17:55:10,505] [INFO] [pipeline.pipeline] [document_crawler] [ACC] starting
+[2026-07-16 17:55:10,880] [INFO] [pipeline.Retrieval.Document.document_crawler] [DocumentCrawler] [ACC] fetching seed URL: https://www.bseindia.com/corporates/ann.html?scripcd=500410
+[2026-07-16 17:55:11,529] [ERROR] [pipeline.pipeline] [document_crawler] [ACC] failed: Browser.close: Connection closed while reading from the driver
+Traceback (most recent call last):
+  File "/Users/arnav/Projects/Software/data_harvester/pipeline/pipeline.py", line 121, in run
+    raw_result = self._stage_fns[stage_name](symbol)
+                 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/arnav/Projects/Software/data_harvester/pipeline/pipeline.py", line 97, in _call_document_crawler
+    return run_document_crawler(symbol)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/arnav/Projects/Software/data_harvester/pipeline/Retrieval/Document/document_crawler.py", line 152, in run
+    return asyncio.run(_run_async(symbol))
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/arnav/.pyenv/versions/3.11.9/lib/python3.11/asyncio/runners.py", line 190, in run
+    return runner.run(main)
+           ^^^^^^^^^^^^^^^^
+  File "/Users/arnav/.pyenv/versions/3.11.9/lib/python3.11/asyncio/runners.py", line 118, in run
+    return self._loop.run_until_complete(task)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/arnav/.pyenv/versions/3.11.9/lib/python3.11/asyncio/base_events.py", line 654, in run_until_complete
+    return future.result()
+           ^^^^^^^^^^^^^^^
+  File "/Users/arnav/Projects/Software/data_harvester/pipeline/Retrieval/Document/document_crawler.py", line 172, in _run_async
+    return await process_single_company(symbol, urls)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/arnav/Projects/Software/data_harvester/pipeline/Retrieval/Document/document_crawler.py", line 193, in process_single_company
+    async with AsyncWebCrawler(config=browser_config) as crawler:
+  File "/Users/arnav/Projects/Software/data_harvester/.venv/lib/python3.11/site-packages/crawl4ai/async_webcrawler.py", line 203, in __aexit__
+    await self.close()
+  File "/Users/arnav/Projects/Software/data_harvester/.venv/lib/python3.11/site-packages/crawl4ai/async_webcrawler.py", line 197, in close
+    await self.crawler_strategy.__aexit__(None, None, None)
+  File "/Users/arnav/Projects/Software/data_harvester/.venv/lib/python3.11/site-packages/crawl4ai/async_crawler_strategy.py", line 125, in __aexit__
+    await self.close()
+  File "/Users/arnav/Projects/Software/data_harvester/.venv/lib/python3.11/site-packages/crawl4ai/async_crawler_strategy.py", line 142, in close
+    await self.browser_manager.close()
+  File "/Users/arnav/Projects/Software/data_harvester/.venv/lib/python3.11/site-packages/crawl4ai/browser_manager.py", line 2082, in close
+    await self.browser.close()
+  File "/Users/arnav/Projects/Software/data_harvester/.venv/lib/python3.11/site-packages/playwright/async_api/_generated.py", line 16034, in close
+    return mapping.from_maybe_impl(await self._impl_obj.close(reason=reason))
+                                   ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/arnav/Projects/Software/data_harvester/.venv/lib/python3.11/site-packages/playwright/_impl/_browser.py", line 244, in close
+    raise e
+  File "/Users/arnav/Projects/Software/data_harvester/.venv/lib/python3.11/site-packages/playwright/_impl/_browser.py", line 241, in close
+    await self._channel.send("close", None, {"reason": reason})
+  File "/Users/arnav/Projects/Software/data_harvester/.venv/lib/python3.11/site-packages/playwright/_impl/_connection.py", line 69, in send
+    return await self._connection.wrap_api_call(
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/arnav/Projects/Software/data_harvester/.venv/lib/python3.11/site-packages/playwright/_impl/_connection.py", line 559, in wrap_api_call
+    raise rewrite_error(error, f"{parsed_st['apiName']}: {error}") from None
+Exception: Browser.close: Connection closed while reading from the driver
+[2026-07-16 17:55:11,530] [ERROR] [pipeline.pipeline] [Pipeline] [ACC] aborted — see failed stage above
+[2026-07-16 17:55:11,530] [INFO] [pipeline.pipeline] [Pipeline] [ACMESOLAR] starting
+[2026-07-16 17:55:11,530] [INFO] [pipeline.pipeline] [document_crawler] [ACMESOLAR] starting
+[2026-07-16 17:55:11,897] [INFO] [pipeline.Retrieval.Document.document_crawler] [DocumentCrawler] [ACMESOLAR] fetching seed URL: https://www.bseindia.com/corporates/ann.html?scripcd=544290
+[2026-07-16 17:55:19,525] [INFO] [pipeline.Retrieval.Document.document_crawler] [DocumentCrawler] [ACMESOLAR] 295 links found on https://www.bseindia.com/corporates/ann.html?scripcd=544290

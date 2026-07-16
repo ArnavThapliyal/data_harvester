@@ -128,7 +128,8 @@ def main() -> None:
     args = parse_args()
 
     known_symbols = load_known_symbols()
-
+    runner = PipelineRunner()
+    
     if args.all_symbols:
         symbols = known_symbols
         stage: Optional[str] = None
@@ -144,8 +145,6 @@ def main() -> None:
             logger.info(f"Mode: single symbol, single stage ({args.symbol} / {stage})")
         else:
             logger.info(f"Mode: single symbol, all stages ({args.symbol})")
-
-        runner = PipelineRunner()
 
     try:
         summary = runner.run(symbols, stage=stage)

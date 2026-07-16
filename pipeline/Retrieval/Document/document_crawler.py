@@ -215,6 +215,7 @@ async def process_single_company(symbol: str, urls: List[str], overwrite: bool =
 
             for href in hrefs:
                 # Apply per-domain pacing before downloading
+                href = urljoin(url, href)
                 parsed_url = urlparse(href)
                 domain = parsed_url.netloc.lower()
                 
