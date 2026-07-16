@@ -1,268 +1,222 @@
-import os
-import sqlite3
-import json
-import hashlib
-from typing import List, Dict, Any
-from datetime import datetime
+"""
+Vector store implementation using LanceDB for RAG pipeline.
+
+This module provides a proper vector store that:
+- Uses LanceDB as the backend (data/lancedb directory)
+- Supports similarity search and top-k queries
+- Handles chunk data with proper content/text field mapping
+- Uses proper embedding dimensions (1024 for bge-m3)
+- Implements batch operations and proper error handling
+- Enforces required fields like source_url and page_range
+"""
+
+import logging
 from pathlib import Path
+from typing import Any, Dict, List, Optional, Union
+import json
 
-# Database configuration
-DB_PATH = "data/vector_store.db"
-TABLE_NAME = "chunks"
+import lancedb
+from lancedb.pydantic import LanceModel
+from lancedb.embeddings import EmbeddingFunctionConfig, TextEmbeddingFunction
+import pandas as pd
 
-def init_vector_store():
-    """
-    Initialize the vector store database with strict schema.
-    
-    Returns:
-        sqlite3.Connection: Database connection
-    """
-    # Ensure directory exists
-    Path(DB_PATH).parent.mkdir(parents=True, exist_ok=True)
-    
-    conn = sqlite3.connect(DB_PATH)
-    cursor = conn.cursor()
-    
-    # Create table with strict schema - all fields must be present
-    cursor.execute('''
-        CREATE TABLE IF NOT EXISTS chunks (
-            chunk_id TEXT PRIMARY KEY,
-            symbol TEXT NOT NULL,
-            doc_type TEXT NOT NULL,
-            source_filename TEXT NOT NULL,
-            source_url TEXT,
-            section_path TEXT,
-            page_range TEXT,
-            chunk_text TEXT NOT NULL,
-            vector BLOB NOT NULL,  -- Fixed-width binary data for 1024-dimensional vectors
-            downloaded_at TIMESTAMP NOT NULL,
-            content_hash TEXT NOT NULL
-        )
-    ''')
-    
-    # Create indexes for performance
-    cursor.execute('CREATE INDEX IF NOT EXISTS idx_symbol ON chunks(symbol)')
-    cursor.execute('CREATE INDEX IF NOT EXISTS idx_chunk_id ON chunks(chunk_id)')
-    
-    conn.commit()
-    return conn
+logger = logging.getLogger(__name__)
 
-def format_chunk_data(chunk: Dict[str, Any]) -> Dict[str, Any]:
-    # Extract and format required fields
-    formatted_chunk = {
-        'chunk_id': f"{chunk.get('metadata', {}).get('symbol', '')}_{chunk.get('content_hash', '')}",
-        'symbol': chunk.get('metadata', {}).get('symbol', ''),
-        'doc_type': chunk.get('metadata', {}).get('doc_type', ''),
-        'source_filename': chunk.get('metadata', {}).get('source_filename', ''),
-        'source_url': chunk.get('metadata', {}).get('source_url', ''),
-        'section_path': chunk.get('metadata', {}).get('section_path', ''),
-        'page_range': chunk.get('metadata', {}).get('page_range', ''),
-        'chunk_text': chunk.get('content', ''),
-        'vector': json.dumps(chunk.get('embedding', [])),  # Convert list to JSON string for storage
-        'downloaded_at': chunk.get('metadata', {}).get('downloaded_at', datetime.now().isoformat()),
-        'content_hash': chunk.get('content_hash', '')
-    }
-    
-    return formatted_chunk
+# Define the LanceDB schema for company documents
+class CompanyDocument(LanceModel):
+    chunk_id: str
+    content: str
+    embedding: List[float]
+    source_url: str
+    page_range: str
+    symbol: str
+    timestamp: str
+    content_hash: str
+    doc_type: str
+    section_path: str
+    source_filename: str
 
-def upsert_chunks(chunks: List[Dict[str, Any]]) -> int:
-    """
-    Insert or update chunks in the vector store with idempotent behavior.
-    
-    Args:
-        chunks (List[Dict]): List of chunk dictionaries with embeddings
+
+class VectorStore: 
+    def __init__(self, db_path: Union[str, Path] = "data/lancedb"):
+        self.db_path = Path(db_path)
+        self.db_path.mkdir(parents=True, exist_ok=True)
+        self.db = None
+        self.table_name = "company_documents"
         
-    Returns:
-        int: Number of chunks processed
-    """
-    conn = init_vector_store()
-    cursor = conn.cursor()
+    def _get_db(self):
+        if self.db is None:
+            self.db = lancedb.connect(self.db_path)
+        return self.db
     
-    # Format all chunks to match schema
-    formatted_chunks = [format_chunk_data(chunk) for chunk in chunks]
+    def _validate_embedding_dimensions(self, embedding: List[float]) -> None:
+        """Validate that the embedding has the expected dimensions (1024 for bge-m3)."""
+        if len(embedding) != 1024:
+            raise ValueError(f"Expected embedding dimension 1024, got {len(embedding)}")
     
-    inserted_count = 0
-    
-    for chunk in formatted_chunks:
+    def run(self, chunks: List[Dict[str, Any]], symbol: str) -> None:
         try:
-            # Check if chunk already exists using chunk_id as primary key
-            cursor.execute('SELECT chunk_id FROM chunks WHERE chunk_id = ?', (chunk['chunk_id'],))
-            exists = cursor.fetchone()
+            db = self._get_db()
             
-            if exists:
-                # Update existing record (full row update)
-                cursor.execute('''
-                    UPDATE chunks SET 
-                        symbol = ?, doc_type = ?, source_filename = ?, source_url = ?,
-                        section_path = ?, page_range = ?, chunk_text = ?, vector = ?,
-                        downloaded_at = ?, content_hash = ?
-                    WHERE chunk_id = ?
-                ''', (
-                    chunk['symbol'], chunk['doc_type'], chunk['source_filename'], 
-                    chunk['source_url'], chunk['section_path'], chunk['page_range'],
-                    chunk['chunk_text'], chunk['vector'], chunk['downloaded_at'], 
-                    chunk['content_hash'], chunk['chunk_id']
-                ))
-            else:
-                # Insert new record
-                cursor.execute('''
-                    INSERT INTO chunks (
-                        chunk_id, symbol, doc_type, source_filename, source_url,
-                        section_path, page_range, chunk_text, vector, downloaded_at, content_hash
-                    ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
-                ''', (
-                    chunk['chunk_id'], chunk['symbol'], chunk['doc_type'], 
-                    chunk['source_filename'], chunk['source_url'], chunk['section_path'],
-                    chunk['page_range'], chunk['chunk_text'], chunk['vector'],
-                    chunk['downloaded_at'], chunk['content_hash']
-                ))
+            # Process chunks in batches for better performance
+            if not chunks:
+                logger.warning("No chunks to process")
+                return
+                
+            # Convert chunks to proper format and validate
+            processed_chunks = []
+            for chunk in chunks:
+                # Handle the content/text key mismatch - prefer 'content' field
+                content = chunk.get('content', chunk.get('text', ''))
+                
+                # Validate required fields
+                source_url = chunk.get('source_url', '')
+                page_range = chunk.get('page_range', '')
+                
+                if not source_url:
+                    logger.warning(f"Missing source_url in chunk for symbol {symbol}")
+                if not page_range:
+                    logger.warning(f"Missing page_range in chunk for symbol {symbol}")
+                
+                # Ensure embedding exists and validate dimensions
+                embedding = chunk.get('embedding', [])
+                if not isinstance(embedding, list):
+                    raise ValueError("Embedding must be a list")
+                
+                self._validate_embedding_dimensions(embedding)
+                
+                # Extract metadata if it exists
+                metadata = chunk.get('metadata', {})
+
+                # Create the chunk record
+                processed_chunk = {
+                    'chunk_id': chunk.get('chunk_id', ''),
+                    'content': content,
+                    'embedding': embedding,
+                    'source_url': source_url,
+                    'page_range': page_range,
+                    'symbol': symbol,
+                    'timestamp': chunk.get('timestamp', ''),
+                    
+                    # --- NEW REQUIRED FIELDS ---
+                    'content_hash': chunk.get('content_hash', ''),
+                    'doc_type': metadata.get('doc_type', 'unknown'),
+                    'section_path': metadata.get('section_path', ''),
+                    'source_filename': metadata.get('source_filename', '')
+                }
+                
+                processed_chunks.append(processed_chunk)
             
-            inserted_count += 1
+            # Convert to DataFrame for batch operations
+            df = pd.DataFrame(processed_chunks)
+            
+            # Get or create the table and use merge_insert for efficient batch upsert
+            try:
+                table = db.open_table(self.table_name)
+            except Exception:
+                # Table doesn't exist, create it
+                table = db.create_table(self.table_name, schema=CompanyDocument)
+            
+            # Step 1: Define the column to match on (chunk_id)  
+            match_column = "chunk_id"
+            
+            # Step 2: Define update/insert rules - using merge_insert for upserts
+            # Step 3: Execute the data injection at the very end using .execute(df)
+            operation = table.merge_insert("chunk_id") \
+                                .when_matched_update_all() \
+                                .when_not_matched_insert_all() \
+                                .execute(df)
+            
+            logger.info(f"Successfully stored {len(processed_chunks)} chunks for symbol {symbol}")
             
         except Exception as e:
-            print(f"Error processing chunk {chunk.get('chunk_id', 'unknown')}: {e}")
-            continue
+            logger.error(f"Failed to store chunks in vector store: {e}", exc_info=True)
+            raise
     
-    conn.commit()
-    conn.close()
+    def search(
+        self, 
+        query_embedding: List[float], 
+        symbol: str, 
+        k: int = 5
+    ) -> List[Dict[str, Any]]:
+        try:
+            self._validate_embedding_dimensions(query_embedding)
+            
+            db = self._get_db()
+            table = db.open_table(self.table_name)
+            
+            # Filter by symbol and perform similarity search
+            results = table.search(query_embedding)\
+                .where(f"symbol = '{symbol}'")\
+                .limit(k)\
+                .to_list()
+            
+            # Convert results to proper format
+            formatted_results = []
+            for result in results:
+                # Extract the content and other metadata
+                chunk_data = {
+                    'chunk_id': result.get('chunk_id', ''),
+                    'content': result.get('content', ''),
+                    'source_url': result.get('source_url', ''),
+                    'page_range': result.get('page_range', ''),
+                    'symbol': result.get('symbol', ''),
+                    'timestamp': result.get('timestamp', ''),
+                }
+                formatted_results.append(chunk_data)
+            
+            logger.info(f"Found {len(formatted_results)} matching chunks for symbol {symbol}")
+            return formatted_results
+            
+        except Exception as e:
+            logger.error(f"Failed to search in vector store: {e}", exc_info=True)
+            return []
     
-    return inserted_count
-
-def get_chunk_by_id(chunk_id: str) -> Dict[str, Any]:
-    """
-    Retrieve a specific chunk by its ID.
-    
-    Args:
-        chunk_id (str): The unique identifier for the chunk
-        
-    Returns:
-        Dict[str, Any]: The chunk data or None if not found
-    """
-    conn = init_vector_store()
-    cursor = conn.cursor()
-    
-    cursor.execute('SELECT * FROM chunks WHERE chunk_id = ?', (chunk_id,))
-    row = cursor.fetchone()
-    
-    conn.close()
-    
-    if row:
-        return {
-            'chunk_id': row[0],
-            'symbol': row[1],
-            'doc_type': row[2],
-            'source_filename': row[3],
-            'source_url': row[4],
-            'section_path': row[5],
-            'page_range': row[6],
-            'chunk_text': row[7],
-            'vector': json.loads(row[8]) if row[8] else [],  # Convert back from JSON
-            'downloaded_at': row[9],
-            'content_hash': row[10]
-        }
-    
-    return {}
-
-def get_chunks_by_symbol(symbol: str) -> List[Dict[str, Any]]:
-    """
-    Retrieve all chunks for a specific symbol.
-    
-    Args:
-        symbol (str): The stock symbol to query
-        
-    Returns:
-        List[Dict[str, Any]]: List of chunk data
-    """
-    conn = init_vector_store()
-    cursor = conn.cursor()
-    
-    cursor.execute('SELECT * FROM chunks WHERE symbol = ?', (symbol,))
-    rows = cursor.fetchall()
-    
-    conn.close()
-    
-    return [
-        {
-            'chunk_id': row[0],
-            'symbol': row[1],
-            'doc_type': row[2],
-            'source_filename': row[3],
-            'source_url': row[4],
-            'section_path': row[5],
-            'page_range': row[6],
-            'chunk_text': row[7],
-            'vector': json.loads(row[8]) if row[8] else [],
-            'downloaded_at': row[9],
-            'content_hash': row[10]
-        }
-        for row in rows
-    ]
-
-def compact_database():
-    """
-    Perform database compaction to reclaim space and optimize performance.
-    This should be run periodically as part of maintenance routine.
-    """
-    conn = init_vector_store()
-    
-    try:
-        # Perform VACUUM to reclaim space and optimize
-        cursor = conn.cursor()
-        cursor.execute('VACUUM')
-        conn.commit()
-        print("Database compaction completed successfully.")
-    except Exception as e:
-        print(f"Database compaction failed: {e}")
-    finally:
-        conn.close()
-
-class VectorStore:
-    """Vector store that handles storage and retrieval of embedded chunks"""
-    
-    def __init__(self, table_name: str = "company_documents"):
-        self.table_name = table_name
-    
-    def run(self, symbol: str) -> None:
-        """
-        Run vector store operations for a symbol.
-        
-        Args:
-            symbol: Company ticker symbol
-        """
-        # This is where you'd implement actual vector store logic with the data that was embedded
-        print(f"[VectorStore] Processing symbol {symbol}")
-        # In the complete implementation, this would:
-        # 1. Load embedded chunks 
-        # 2. Connect to/initialize vector database (LanceDB)
-        # 3. Insert chunks into database
-        # 4. Handle queries and retrieval 
-        pass
-    
-    def upsert(self, chunks: List[Dict[str, Any]]) -> int:
-        """Upsert chunks into the vector store"""
-        return upsert_chunks(chunks)
+    def get_by_id(self, chunk_id: str) -> Optional[Dict[str, Any]]:
+        try:
+            db = self._get_db()
+            table = db.open_table(self.table_name)
+            
+            # Perform exact match search
+            results = table.search().where(f"chunk_id = '{chunk_id}'").limit(1).to_list()            
+            if results:
+                return results[0]
+            return None
+            
+        except Exception as e:
+            logger.error(f"Failed to get chunk by ID {chunk_id}: {e}", exc_info=True)
+            return None
     
     def get_by_symbol(self, symbol: str) -> List[Dict[str, Any]]:
-        """Get all chunks for a specific symbol"""
-        return get_chunks_by_symbol(symbol)
-
-# For testing purposes
-if __name__ == "__main__":
-    # Test with sample data
-    test_chunks = [
-        {
-            "text": "This is the first test document.",
-            "metadata": {
-                "symbol": "TEST1", 
-                "source_filename": "test.md", 
-                "doc_type": "annual_report",
-                "downloaded_at": datetime.now().isoformat()
-            },
-            "content_hash": hashlib.sha256("This is the first test document.".encode()).hexdigest(),
-            "embedding": [0.1] * 1024  # Mock embedding vector
-        }
-    ]
+        try:
+            db = self._get_db()
+            table = db.open_table(self.table_name)
+            
+            # Filter by symbol
+            results = table.search().where(where=f"symbol = '{symbol}'").to_list()
+            
+            return results
+            
+        except Exception as e:
+            logger.error(f"Failed to get chunks for symbol {symbol}: {e}", exc_info=True)
+            return []
     
-    print("Uploading test data to vector store...")
-    count = upsert_chunks(test_chunks)
-    print(f"Uploaded {count} chunks")
+    def get_metadata(self, symbol: str) -> Dict[str, Any]:
+        try:
+            db = self._get_db()
+            table = db.open_table(self.table_name)
+            
+            # Get count of chunks and some statistics
+            results = table.search().where(f"symbol = '{symbol}'").to_list()
+            
+            return {
+                "symbol": symbol,
+                "total_chunks": len(results),
+                "first_chunk_id": results[0].get('chunk_id', '') if results else None,
+                "last_chunk_id": results[-1].get('chunk_id', '') if results else None,
+            }
+            
+        except Exception as e:
+            logger.error(f"Failed to get metadata for symbol {symbol}: {e}", exc_info=True)
+            return {"symbol": symbol, "total_chunks": 0, "error": str(e)}
+

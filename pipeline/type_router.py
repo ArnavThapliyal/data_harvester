@@ -27,15 +27,6 @@ TABULAR_HANDLERS = {
 HANDLER_MAP = {**STRUCTURED_DOC_HANDLERS, **TABULAR_HANDLERS}
 
 def get_file_type(file_path):
-    """
-    Determine file type by checking extension first, then magic bytes as fallback.
-    
-    Args:
-        file_path (str): Path to the file
-        
-    Returns:
-        str or None: File extension or mime type from magic bytes
-    """
     path = pathlib.Path(file_path)
     
     # First check extension
@@ -55,16 +46,6 @@ def get_file_type(file_path):
     return None
 
 def route_file(file_path, scratch_dir):
-    """
-    Route a file to appropriate handler based on its type.
-    
-    Args:
-        file_path (str): Path to the input file
-        scratch_dir (pathlib.Path): Directory for temporary processing
-        
-    Returns:
-        list or None: List of processed files or None if skipped
-    """
     path = pathlib.Path(file_path)
     
     # Check if file exists
@@ -95,16 +76,6 @@ def route_file(file_path, scratch_dir):
         return None
 
 def route_zip_file(zip_path, scratch_dir):
-    """
-    Extract ZIP file contents and recursively route each member.
-    
-    Args:
-        zip_path (pathlib.Path): Path to the ZIP file
-        scratch_dir (pathlib.Path): Directory for temporary extraction
-        
-    Returns:
-        list: List of (handler, processed_file_path) tuples for all members
-    """
     logger.info(f"Processing ZIP file: {zip_path}")
     
     # Create a temporary directory for extraction

@@ -64,14 +64,8 @@ def load_embedding_model():
             
     return _model
 
-
+# SQL Light?? have to conform if LanceDb has to be used not SQL
 def initialize_vector_db():
-    """
-    Initialize the SQLite-based deduplication index.
-    
-    Returns:
-        sqlite3.Connection: Database connection
-    """
     # Ensure directory exists
     Path("data").mkdir(parents=True, exist_ok=True)
     
@@ -92,16 +86,6 @@ def initialize_vector_db():
 
 
 def check_deduplication(chunk: Dict[str, Any], db_conn) -> bool:
-    """
-    Check if chunk has already been embedded.
-    
-    Args:
-        chunk (Dict): Dictionary containing chunk data and metadata
-        db_conn: SQLite database connection
-        
-    Returns:
-        bool: True if chunk is new, False if already exists
-    """
     cursor = db_conn.cursor()
     
     # Get content hash from chunk
@@ -118,13 +102,6 @@ def check_deduplication(chunk: Dict[str, Any], db_conn) -> bool:
 
 
 def add_to_deduplication_index(chunk: Dict[str, Any], db_conn) -> None:
-    """
-    Add chunk's content hash to deduplication index.
-    
-    Args:
-        chunk (Dict): Dictionary containing chunk data and metadata
-        db_conn: SQLite database connection
-    """
     cursor = db_conn.cursor()
     
     # Get content hash from chunk
@@ -143,16 +120,6 @@ def add_to_deduplication_index(chunk: Dict[str, Any], db_conn) -> None:
 
 
 def batch_chunks(chunks: List[Dict[str, Any]], batch_size: int = 32) -> List[List[Dict[str, Any]]]:
-    """
-    Split chunks into batches for processing.
-    
-    Args:
-        chunks (List[Dict]): List of chunk dictionaries
-        batch_size (int): Size of each batch
-        
-    Returns:
-        List[List[Dict]]: List of batched chunk lists
-    """
     batches = []
     for i in range(0, len(chunks), batch_size):
         batches.append(chunks[i:i + batch_size])
@@ -165,15 +132,6 @@ def extract_texts_from_chunks(chunks: List[Dict[str, Any]]) -> List[str]:
 
 
 def embed_chunks(chunks: List[Dict[str, Any]]) -> List[Dict[str, Any]]:
-    """
-    Main function to embed chunks with deduplication.
-    
-    Args:
-        chunks (List[Dict]): List of chunk dictionaries
-        
-    Returns:
-        List[Dict]: List of dictionaries with added embeddings
-    """
     # Load model
     model = load_embedding_model()
     
@@ -233,20 +191,12 @@ def embed_chunks(chunks: List[Dict[str, Any]]) -> List[Dict[str, Any]]:
     return embedded_chunks
 
 
-class Embedder:
-    """Embedder that processes text chunks and generates vector embeddings."""
-    
+class Embedder:    
     def __init__(self):
         # Embedding model already loaded globally, but we keep this for compatibility
         self.embedding_dim = 1024  # produces 1024-dimensional vectors
         
     def run(self, symbol: str) -> None:
-        """
-        Run embedding process for a symbol.
-        
-        Args:
-            symbol: Company ticker symbol
-        """
         # Input and output paths
         input_dir = Path(f"data/chunked/{symbol}")
         output_dir = Path(f"data/embedded/{symbol}")
@@ -287,12 +237,6 @@ class Embedder:
             json.dump(chunk_data, f, indent=2)
             
     def _generate_dummy_embedding(self, text: str) -> List[float]:
-        """
-        Generate a dummy embedding for demonstration purposes.
-        
-        In a real implementation, this would use an actual embedding model
-        like sentence-transformers or OpenAI embeddings.
-        """
         # Simple hash-based approach for demonstration
         # In practice, replace with actual model inference
         

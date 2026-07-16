@@ -1,22 +1,29 @@
 """
-Cleaner for pipeline - cleans both numeric and document data.
+Purpose
+Normalizes parsed document content before chunking. The cleaner operates on
+the parser's intermediate representation (IR blocks), removes boilerplate,
+normalizes text, and preserves enough document structure for downstream
+chunking.
 
-DOCUMENT MODE:
-    Reads parser output (IR blocks) from data/transient/documents/{symbol}/*.json,
-    strips boilerplate/headers/footers, and writes plain text to
-    data/cleaned/documents/{symbol}/*.txt.
+Responsibilities
+- Remove repeated headers, footers, page numbers, and known boilerplate.
+- Normalize whitespace and text formatting.
+- Preserve semantic structure (headers, lists, tables) required by the
+  chunker.
 
-    Output is .txt, not .json — chunker.py only reads .txt files from its
-    input directory, so cleaner's output format is dictated by chunker's
-    input contract. Header blocks are rendered back to '#'-prefixed
-    Markdown lines (see _render_blocks_to_text) instead of being flattened
-    to bare text — chunker.py's MarkdownHeaderTextSplitter has nothing to
-    split on otherwise. Page-number/block-type provenance beyond that is
-    still discarded here; if that needs to survive into the vector store,
-    chunker.py needs to change too.
+In n out 
+- Takes in Parser IR blocks produced by parser.py.
+- Cleaned IR blocks.
+- Markdown-like text suitable for chunker.py.
 
-NUMERIC MODE:
-    Unchanged from before, still [DEFERRED] from pipeline.py's active chain.
+Dependencies
+- parser.py defines the IR block schema consumed here.
+- chunker.py relies on preserved Markdown structure (headers, lists, etc.)
+  for document splitting.
+
+Notes
+This module performs document normalization only. It does not classify
+documents, generate embeddings, or write to the vector database.
 """
 import json
 import re
@@ -32,12 +39,6 @@ logger = logging.getLogger(__name__)
 
 
 class Cleaner:
-    """Cleaner for pipeline that handles both numeric and document data cleaning."""
-
-    # Static denylist for boilerplate text. Entries with regex metacharacters
-    # are compiled and matched with fullmatch(); plain-string entries are
-    # matched via exact set membership. (Previously, regex entries were
-    # silently dropped from matching entirely — see _static_regex_patterns.)
     DENYLIST_PATTERNS = [
         "Scanned with CamScanner",
         "Powered by",
@@ -52,16 +53,6 @@ class Cleaner:
         pass
 
     def run(self, symbol: str, mode: str) -> Dict[str, Any]:
-        """
-        Run cleaning process for a symbol in either numeric or document mode.
-
-        Args:
-            symbol: Company ticker symbol
-            mode: Either 'numeric' or 'document'
-
-        Returns:
-            {"status": "success" | "no_data", ...counts}
-        """
         if mode == "numeric":
             result = self._clean_numeric(symbol)
         elif mode == "document":
@@ -153,18 +144,6 @@ class Cleaner:
             f.write(text)
 
     def render_blocks_to_text(self, blocks: List[Dict[str, Any]]) -> str:
-        """
-        Flatten cleaned IR blocks to plain text, but keep enough Markdown
-        structure alive for chunker.py's MarkdownHeaderTextSplitter to do
-        anything useful:
-          - header blocks get their '#'*level prefix back (this used to be
-            dropped, which meant every cleaned .txt file was one headerless
-            blob — chunker.py importing MarkdownHeaderTextSplitter had
-            nothing to split on).
-          - list items get a leading '- '.
-          - paragraphs and tables (already Markdown from parser.py) pass
-            through as-is.
-        """
         lines = []
         for block in blocks:
             content = block.get('content', '')
@@ -186,19 +165,6 @@ class Cleaner:
         return "\n\n".join(lines)
 
     def clean_ir_blocks(self, ir_blocks: List[Dict[str, Any]]) -> List[Dict[str, Any]]:
-        """
-        Apply the complete cleaning workflow to IR blocks:
-        1. Page-aware grouping
-        2. Dynamic frequency analysis for headers/footers
-        3. Static denylist filtering (literal + regex)
-        4. Execution with stripping and normalization
-
-        Args:
-            ir_blocks: List of IR blocks from parser
-
-        Returns:
-            Cleaned list of IR blocks
-        """
         page_groups = self._group_by_page(ir_blocks)
         dynamic_deletion_set = self._detect_dynamic_deletion_candidates(page_groups)
         static_deletion_set = self._build_static_deletion_set()

@@ -8,7 +8,19 @@
        - Tables are converted to Markdown format (not raw text)
        - Images include captions and bounding box coordinates
     6. Output: Returns sequential list of IR blocks to pipeline stages
+    Main parsing function that follows the workflow:
+1. Ingest and setup
+2. Execute parsing with layout-aware engine 
+3. Translation to Intermediate Representation
+4. Output packaging
+
+Args:
+    file_path (str): Path to input file
+    scratch_dir (pathlib.Path): Directory for temporary processing
     
+Returns:
+    List[Dict[str, Any]]: List of IR blocks
+
 """
 
 from typing import Any, List, Dict
@@ -48,22 +60,7 @@ class Parser:
             'enable_ml_ocr': False,
             'max_pages_for_ocr': 10,
             'enable_hindi_translation': False
-        }
-
-    """
-        Main parsing function that follows the workflow:
-        1. Ingest and setup
-        2. Execute parsing with layout-aware engine 
-        3. Translation to Intermediate Representation
-        4. Output packaging
-        
-        Args:
-            file_path (str): Path to input file
-            scratch_dir (pathlib.Path): Directory for temporary processing
-            
-        Returns:
-            List[Dict[str, Any]]: List of IR blocks
-        """        
+        }  
     def run(self, file_path: str, scratch_dir: pathlib.Path = None) -> list[dict]:
         # For now just return a basic placeholder - the parser interface should be implemented  
         # This function would actually use docling to parse documents according to your 
@@ -132,17 +129,6 @@ class Parser:
         }
 
     def _translate_document_to_ir(self, document: Any, file_path: str) -> List[Dict[str, Any]]:
-        """
-        Translate layout-aware engine output to Intermediate Representation
-        following your IR format specifications
-        
-        Args:
-            document (Any): Document from docling converter 
-            file_path (str): Path to the original file
-            
-        Returns:
-            List[Dict[str, Any]]: List of IR blocks with metadata and content
-        """
         ir_blocks = []
         
         # Get document metadata to extract page info
@@ -166,15 +152,6 @@ class Parser:
         return ir_blocks
 
     def _extract_elements_from_document(self, document: Any) -> List[Any]:
-        """
-        Extract elements from the document in sequential reading order
-        
-        Args:
-            document (Any): Document object from docling
-            
-        Returns:
-            List[Any]: List of elements in reading order
-        """
         # Docling already provides proper tree traversal with reading order
         # This would be more complex in real implementation using hierarchical tree
         elements = []
@@ -202,18 +179,6 @@ class Parser:
             elements.append(node)
 
     def _element_to_ir_block(self, element: Any, element_idx: int, metadata: Dict[str, Any]) -> Dict[str, Any]:
-        """
-        Translate an engine element to Intermediate Representation block
-        
-        Args:
-            element (Any): Element from layout-aware engine
-            element_idx (int): Index of the element 
-            metadata (Dict[str, Any]): Document metadata
-            
-        Returns:
-            Dict[str, Any]: IR block with proper structure and metadata
-        """
-
         # Extract page number (this is part of docling's element metadata)
         page_number = getattr(element, 'page', 1)  # Default to page 1
         

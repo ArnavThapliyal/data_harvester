@@ -81,13 +81,6 @@ STAGE_ORDER = [
 class PipelineRunner:
 
     def __init__(self, config: Optional[Dict[str, Any]] = None):
-        """
-        Args:
-            config: reserved for future options (e.g. overwrite/resume).
-                    Nothing reads it yet — [MISSING] skip-if-already-done
-                    logic. Every run currently reprocesses every requested
-                    stage in full.
-        """
         self.config = config or {}
 
         self._indexer = Indexer()
@@ -109,18 +102,6 @@ class PipelineRunner:
     # ---- core run loop --------------------------------------------------
 
     def run(self, symbols: List[str], stage: Optional[str] = None) -> Dict[str, Any]:
-        """
-        Run the pipeline for a list of symbols.
-
-        Args:
-            symbols: company ticker symbols to process.
-            stage: if given, run only this single stage for each symbol
-                   instead of the full STAGE_ORDER chain. Must be a name
-                   from STAGE_ORDER.
-
-        Returns:
-            {"total": int, "succeeded": [symbols], "failed": [symbols]}
-        """
         if stage is not None and stage not in STAGE_ORDER:
             raise ValueError(f"Unknown stage {stage!r}. Must be one of {STAGE_ORDER}")
 
@@ -163,7 +144,6 @@ class PipelineRunner:
 
     @staticmethod
     def _normalize_stage_result(raw: Any) -> Dict[str, Any]:
-        """Coerce whatever a stage returns into a dict so logging/validation never breaks on it."""
         if raw is None:
             # [CONFIRM] stage returned nothing — assumed success since no exception was raised.
             return {"status": "success"}

@@ -16,6 +16,7 @@ Each output chunk carries `section_path` — its header breadcrumb, e.g.
 metadata.section_path used to be [MISSING] for; it now reads it straight
 off the chunk dict.
 """
+import hashlib
 import json
 import logging
 from pathlib import Path
@@ -24,7 +25,6 @@ from typing import Any, Dict, List
 from langchain_text_splitters import MarkdownHeaderTextSplitter, RecursiveCharacterTextSplitter
 
 from config.settings import CLEANED_DOCUMENTS, CHUNKED
-
 logger = logging.getLogger(__name__)
 
 HEADERS_TO_SPLIT_ON = [
@@ -37,6 +37,9 @@ HEADERS_TO_SPLIT_ON = [
 
 class Chunker:
     """Chunker that processes cleaned document text and splits into manageable pieces."""
+    
+    # Class-level counter to ensure chunk_id is unique across all files
+    _global_chunk_id = 0
 
     def __init__(self):
         self.chunk_size = 1000  # characters per chunk
@@ -51,13 +54,12 @@ class Chunker:
             chunk_overlap=self.overlap_size,
         )
 
+    def _generate_chunk_id(self, content: str, chunk_index: int) -> str:
+        # Create a hash of the content to make it unique
+        content_hash = hashlib.md5(content.encode()).hexdigest()[:6]
+        return f"{content_hash}_{chunk_index}"
+
     def run(self, symbol: str) -> Dict[str, Any]:
-        """
-        [DEBUG/legacy path] Re-chunk already-cleaned .txt files from disk.
-        Not part of the active index stage — indexer.py calls chunk_text()
-        directly on in-memory text instead. Kept for standalone re-chunking
-        without re-parsing/re-embedding (e.g. after tuning chunk_size).
-        """
         input_dir = CLEANED_DOCUMENTS / symbol
         output_dir = CHUNKED / symbol
 
@@ -84,35 +86,6 @@ class Chunker:
             return {"status": "no_data", "chunks_written": 0}
         return {"status": "success", "chunks_written": total_chunks, "files_processed": files_processed}
 
-    def chunk_text(self, content: str) -> List[Dict[str, Any]]:
-        """
-        Pure in-memory chunking: cleaned Markdown text in, chunk dicts out.
-        No disk I/O — this is what indexer.py calls directly. header-split
-        then char-split, same two-stage logic _chunk_file used to inline;
-        _chunk_file below now just calls this and writes the result.
-        """
-        if not content.strip():
-            return []
-
-        sections = self._header_splitter.split_text(content)
-
-        chunks: List[Dict[str, Any]] = []
-        chunk_id = 0
-        for section in sections:
-            section_path = " > ".join(v for v in section.metadata.values() if v) if section.metadata else ""
-
-            for sub_text in self._char_splitter.split_text(section.page_content):
-                if not sub_text.strip():
-                    continue
-                chunks.append({
-                    "chunk_id": chunk_id,
-                    "content": sub_text,
-                    "section_path": section_path,
-                })
-                chunk_id += 1
-
-        return chunks
-
     def _chunk_file(self, file_path: Path, output_dir: Path) -> int:
         """[DEBUG/legacy path] Chunk one cleaned .txt file, write result to disk. Returns chunk count."""
         content = file_path.read_text()
@@ -127,3 +100,39 @@ class Chunker:
             json.dump(chunk_data, f, indent=2)
 
         return len(chunks)
+
+    def chunk_text(self, text: str) -> List[Dict[str, Any]]:
+        """
+        Splits clean text into chunks using header-aware character splitting.
+        """
+        if not text.strip():
+            return []
+
+        # Stage 1: Group by headers
+        header_sections = self._header_splitter.split_text(text)
+        
+        chunks = []
+        chunk_idx = 0
+        
+        # Stage 2: Sub-split large header sections to fit within chunk_size
+        for section in header_sections:
+            # Build the section path breadcrumb string
+            header_dict = section.metadata
+            breadcrumb = " > ".join([header_dict[h] for h in ["h1", "h2", "h3", "h4"] if h in header_dict])
+            
+            # Sub-split into target character limits
+            sub_chunks = self._char_splitter.split_text(section.page_content)
+            
+            for sub_content in sub_chunks:
+                # Generate our unique, collision-proof chunk_id
+                unique_chunk_id = self._generate_chunk_id(sub_content, chunk_idx)
+                
+                chunk_dict = {
+                    "chunk_id": unique_chunk_id,  # <-- Using our verified unique ID variable here
+                    "content": sub_content,
+                    "section_path": breadcrumb,
+                }
+                chunks.append(chunk_dict)
+                chunk_idx += 1
+                
+        return chunks

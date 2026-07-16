@@ -123,7 +123,7 @@ class YFinanceCollector(BaseNumericCollector):
                 "low_price": info.get("dayLow", None),
                 "timestamp": datetime.now(UTC).isoformat(),
             }
-            
+        
             records.append(record)
             
         return records

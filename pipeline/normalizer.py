@@ -20,13 +20,6 @@ class Normalizer:
         pass
     
     def run(self, symbol: str, mode: str) -> None:
-        """
-        Run normalization process for a symbol in either numeric or document mode.
-        
-        Args:
-            symbol: Company ticker symbol
-            mode: Either 'numeric' or 'document'
-        """
         if mode == "numeric":
             # Skip normalization for numeric data
             logger.info(f"[normalizer] [{symbol}] mode=numeric — skipped")
@@ -62,14 +55,6 @@ class Normalizer:
             self._process_single_document(json_file, output_file, symbol)
     
     def _process_single_document(self, json_file: Path, output_file: Path, symbol: str) -> None:
-        """
-        Process a single document JSON file and append it to the master file.
-        
-        Args:
-            json_file: Path to the cleaned JSON file
-            output_file: Path to the master output file
-            symbol: Company ticker symbol
-        """
         try:
             # Read the cleaned IR blocks
             with open(json_file, 'r') as f:
@@ -99,17 +84,6 @@ class Normalizer:
             raise
     
     def _classify_document(self, ir_blocks: List[Dict[str, Any]], symbol: str, source_filename: str) -> str:
-        """
-        Classify document type using pipeline/document_template/classifier.
-        
-        Args:
-            ir_blocks: List of IR blocks from cleaned document
-            symbol: Company ticker symbol  
-            source_filename: Name of source file
-            
-        Returns:
-            Document type string (e.g., '10-K', '10-Q', 'annual_report', etc.)
-        """
         try:
             # Import classifier from document_template package
             from pipeline.document_template.classifier import DocumentClassifier
@@ -140,16 +114,6 @@ class Normalizer:
     
     def _build_classification_context(self, ir_blocks: List[Dict[str, Any]], 
                                     source_filename: str) -> str:
-        """
-        Build classification context using filename and text content from first pages.
-        
-        Args:
-            ir_blocks: List of IR blocks from cleaned document
-            source_filename: Name of source file
-            
-        Returns:
-            String containing classification context
-        """
         # Start with the filename (the classifier will be able to use this)
         context = f"{source_filename}\n"
         
@@ -172,18 +136,6 @@ class Normalizer:
     
     def _assemble_metadata(self, ir_blocks: List[Dict[str, Any]], symbol: str, 
                           source_filename: str, doc_type: str) -> Dict[str, Any]:
-        """
-        Assemble metadata dictionary for the document.
-        
-        Args:
-            ir_blocks: List of IR blocks 
-            symbol: Company ticker symbol
-            source_filename: Name of source file
-            doc_type: Classified document type
-            
-        Returns:
-            Dictionary containing structured metadata
-        """
         # Calculate stats from IR blocks
         page_count = 0
         ocr_pages = 0
@@ -209,15 +161,6 @@ class Normalizer:
         return metadata
     
     def _render_markdown(self, ir_blocks: List[Dict[str, Any]]) -> str:
-        """
-        Render the IR blocks into continuous Markdown format.
-        
-        Args:
-            ir_blocks: List of cleaned IR blocks
-            
-        Returns:
-            String containing rendered Markdown content
-        """
         markdown_lines = []
         
         for block in ir_blocks:
@@ -249,17 +192,6 @@ class Normalizer:
     
     def _assemble_payload(self, source_filename: str, metadata: Dict[str, Any], 
                          markdown_body: str) -> str:
-        """
-        Assemble the complete payload for appending to master file.
-        
-        Args:
-            source_filename: Name of the source file
-            metadata: Metadata dictionary  
-            markdown_body: Rendered Markdown content
-            
-        Returns:
-            String containing complete payload to be appended
-        """
         # Create YAML frontmatter 
         yaml_lines = [
             "---",

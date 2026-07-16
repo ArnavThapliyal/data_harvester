@@ -1,30 +1,21 @@
 """
-Indexer — the entire raw-file-to-vector-row path, collapsed into one
-in-memory pipeline per file.
+Indexer
 
-There is no data/transient/, data/cleaned/, data/chunked/, or
-data/embedded/ in this path anymore. Those directories only ever existed
-to hand data between what used to be five separate pipeline stages
-(type_router, parser, cleaner, chunker, embedder) each reading a directory
-the previous one wrote. Collapsed into one Python call stack, that handoff
-is just passing a variable to the next function — parse() returns
-ir_blocks, clean() takes ir_blocks and returns text, chunk() takes text and
-returns chunk dicts, embed() takes chunk dicts and returns them with
-vectors attached. Nothing touches disk in between.
+Converts raw documents into LanceDB rows using a single in-memory pipeline.
 
-The only disk I/O in this file is: reading the raw document (already on
-disk courtesy of document_crawler), and the one upsert_chunks() call at
-the very end. That call is a single LanceDB merge_insert().execute() — one
-commit — so per-file atomicity falls out for free: if parsing, cleaning,
-chunking, or embedding raises anywhere above it, upsert_chunks() is never
-reached and the table is untouched for that file. No version-snapshot /
-rollback bookkeeping needed; there's nothing to roll back.
+Pipeline:
+    parse -> clean -> chunk -> embed -> upsert
 
-Granularity is per FILE, not per symbol: index_symbol() iterates a
-symbol's raw files and calls _index_file() once per file, so one bad PDF
-in a batch of twelve doesn't touch the other eleven's already-committed
-rows, and doesn't stop them from being indexed either.
+Only two disk operations occur:
+    1. Read the raw document.
+    2. Commit chunks to LanceDB.
+
+Everything between those steps stays in memory.
+
+Indexing is atomic per file. A failed parse, clean, chunk, or embedding step
+never reaches the database. Other files continue processing independently.
 """
+
 import hashlib
 import logging
 import os
@@ -38,20 +29,12 @@ from pipeline.parser import Parser
 from pipeline.cleaner import Cleaner
 from pipeline.chunker import Chunker
 from pipeline.embedder import embed_chunks
-from pipeline.vector_store import upsert_chunks, TABLE_NAME
+from pipeline.vector_store import VectorStore
 
 logger = logging.getLogger(__name__)
 
 
 class Indexer:
-    """
-    index_symbol(symbol) is pipeline.py's one call for turning a symbol's
-    downloaded raw files into rows in LanceDB. Pass raw_dir= to point it at
-    an arbitrary folder instead of the symbol's default location under
-    config.settings.RAW_DOCUMENTS — useful for testing against a handful of
-    files without touching the real data/raw/ tree.
-    """
-
     def __init__(self):
         self._parser = Parser()
         self._cleaner = Cleaner()
@@ -120,15 +103,6 @@ class Indexer:
         }
 
     def _index_file(self, file_path: Path, symbol: str, source_filename: str) -> int:
-        """
-        parse -> clean -> chunk -> embed -> upsert for ONE file, entirely
-        in memory until the final upsert_chunks() call. Returns the number
-        of chunks written (0 on an empty/unparseable file — that's a
-        content problem, handled as files_failed by the caller, not an
-        exception). Real failures (docling errors, embedding errors)
-        propagate up to index_symbol()'s per-file try/except instead of
-        being swallowed here.
-        """
         # Define the scratch directory (adjust the path if you want it stored elsewhere)
         scratch_dir = str(file_path.parent / "scratch")
         # Ensure the directory actually exists before the parser tries to use it
@@ -161,4 +135,12 @@ class Indexer:
             }
 
         embedded = embed_chunks(chunks)  # dedups + reuses cached vectors via the sqlite content_hash cache
-        return upsert_chunks(embedded, table_name=TABLE_NAME)
+        
+        # --- NEW CODE ---
+        # Initialize the vector store and run the upsert
+        store = VectorStore()
+        store.run(embedded, symbol)
+        
+        # VectorStore.run() returns None, but _index_file expects an integer 
+        # representing chunks written, so we return the length of the embedded list.
+        return len(embedded)
