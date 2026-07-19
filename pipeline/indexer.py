@@ -19,6 +19,7 @@ never reaches the database. Other files continue processing independently.
 import hashlib
 import logging
 import os
+import json
 from datetime import datetime, timezone
 from pathlib import Path
 from typing import Any, Dict, Optional
@@ -45,6 +46,21 @@ class Indexer:
         if not raw_dir.exists():
             logger.warning(f"[indexer] [{symbol}] no raw input found at {raw_dir}")
             return {"status": "no_data", "files_indexed": 0}
+
+        # --- NEW CODE: Load manifest.json to map filenames to URLs ---
+        url_map = {}
+        manifest_path = raw_dir / "manifest.json"
+        if manifest_path.exists():
+            try:
+                with open(manifest_path, 'r') as f:
+                    manifest_data = json.load(f)
+                    for item in manifest_data.get("downloaded_files", []):
+                        if item.get("file"):
+                            # The file path in manifest might be absolute, so we extract just the name
+                            fname = Path(item["file"]).name
+                            url_map[fname] = item.get("url", "")
+            except Exception as e:
+                logger.warning(f"[indexer] [{symbol}] failed to read manifest.json: {e}")
 
         # Use the RAW_DOCUMENTS directory as scratch space for temporary operations
         scratch_dir = RAW_DOCUMENTS / symbol / "scratch"
@@ -73,8 +89,16 @@ class Indexer:
                     files_skipped += 1
                     continue
 
+                # Fetch the URL for this specific file from our map
+                source_url = url_map.get(file_path.name, "")
+
                 try:
-                    n = self._index_file(Path(resolved_path), symbol, source_filename=file_path.name)
+                    n = self._index_file(
+                        Path(resolved_path), 
+                        symbol, 
+                        source_filename=file_path.name,
+                        source_url=source_url
+                    )
                 except Exception as exc:
                     logger.warning(f"[indexer] [{symbol}] failed on {resolved_path}: {exc}", exc_info=True)
                     files_failed += 1
@@ -102,7 +126,7 @@ class Indexer:
             "chunks_written": chunks_written,
         }
 
-    def _index_file(self, file_path: Path, symbol: str, source_filename: str) -> int:
+    def _index_file(self, file_path: Path, symbol: str, source_filename: str, source_url: str = "") -> int:
         # Define the scratch directory (adjust the path if you want it stored elsewhere)
         scratch_dir = str(file_path.parent / "scratch")
         # Ensure the directory actually exists before the parser tries to use it
@@ -123,20 +147,22 @@ class Indexer:
         now = datetime.now(timezone.utc).isoformat()
         for chunk in chunks:
             chunk["content_hash"] = hashlib.sha256(chunk["content"].encode()).hexdigest()
+            
+            # --- NEW CODE: Place required keys at the root of the chunk dict ---
+            chunk["source_url"] = source_url
+            chunk["page_range"] = chunk.get("page_range", "unknown") # Hardcoded to satisfy vector_store.py validation
+            
+            # Keep remaining extra info in metadata
             chunk["metadata"] = {
                 "symbol": symbol,
                 "source_filename": source_filename,
                 "doc_type": "unknown",  # [MISSING] — DocumentClassifier lives in normalizer.py, [DEFERRED]
                 "downloaded_at": now,   # embed time, not actual download time — [CONFIRM]
-                "source_url": "",       # [MISSING] — document_crawler's manifest.json has this per
-                                        # file (url <-> file mapping); not threaded through here yet
                 "section_path": chunk.get("section_path", ""),
-                "page_range": "",       # [MISSING] — lost when cleaner flattens IR blocks to text
             }
 
         embedded = embed_chunks(chunks)  # dedups + reuses cached vectors via the sqlite content_hash cache
         
-        # --- NEW CODE ---
         # Initialize the vector store and run the upsert
         store = VectorStore()
         store.run(embedded, symbol)

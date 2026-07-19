@@ -13,12 +13,18 @@ import os
 import json
 import hashlib
 from pathlib import Path
-from typing import List, Dict, Any
+from typing import List, Dict, Any, Set
 import logging
-import sqlite3
 import torch
+import lancedb
 from sentence_transformers import SentenceTransformer
 import numpy as np
+
+# Must match VectorStore's db_path/table_name in vector_store.py — dedup
+# and storage now read/write the same table, so these can't drift apart.
+# [CONFIRM] move both to config.settings once that's the shared source of truth.
+LANCEDB_PATH = "data/lancedb"
+LANCEDB_TABLE = "company_documents"
 
 # Configure logging
 logger = logging.getLogger(__name__)
@@ -64,59 +70,33 @@ def load_embedding_model():
             
     return _model
 
-# SQL Light?? have to conform if LanceDb has to be used not SQL
-def initialize_vector_db():
-    # Ensure directory exists
-    Path("data").mkdir(parents=True, exist_ok=True)
-    
-    db_path = "data/embedding_index.db"
-    conn = sqlite3.connect(db_path)
-    cursor = conn.cursor()
-    
-    # Create embedding_index table if not exists
-    cursor.execute('''
-        CREATE TABLE IF NOT EXISTS embedding_index (
-            content_hash TEXT PRIMARY KEY,
-            created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
-        )
-    ''')
-    
-    conn.commit()
-    return conn
+def get_existing_hashes(content_hashes: List[str]) -> Set[str]:
+    """
+    Which of these content_hashes are already sitting in LanceDB.
 
+    Replaces the old standalone data/embedding_index.db SQLite tracker —
+    that was a second source of truth for a fact vector_store.py's schema
+    already stores per row (content_hash). One bulk IN-filter query here
+    instead of a per-chunk SQLite round trip.
+    """
+    if not content_hashes:
+        return set()
 
-def check_deduplication(chunk: Dict[str, Any], db_conn) -> bool:
-    cursor = db_conn.cursor()
-    
-    # Get content hash from chunk
-    content_hash = chunk.get('content_hash', '')
-    
-    if not content_hash:
-        return True  # If no hash, assume new
-    
-    # Check if hash exists in database
-    cursor.execute('SELECT 1 FROM embedding_index WHERE content_hash = ?', (content_hash,))
-    result = cursor.fetchone()
-    
-    return result is None  # Return True if not found (i.e., new)
+    try:
+        db = lancedb.connect(LANCEDB_PATH)
+        table = db.open_table(LANCEDB_TABLE)
+    except Exception:
+        # Table doesn't exist yet — first run, nothing is indexed.
+        return set()
 
-
-def add_to_deduplication_index(chunk: Dict[str, Any], db_conn) -> None:
-    cursor = db_conn.cursor()
-    
-    # Get content hash from chunk
-    content_hash = chunk.get('content_hash', '')
-    
-    if not content_hash:
-        return  # Skip if no hash
-        
-    # Insert or ignore (in case of duplicate)
-    cursor.execute(
-        'INSERT OR IGNORE INTO embedding_index (content_hash) VALUES (?)',
-        (content_hash,)
+    quoted = ",".join(f"'{h}'" for h in content_hashes)
+    rows = (
+        table.search()
+        .where(f"content_hash IN ({quoted})")
+        .select(["content_hash"])
+        .to_list()
     )
-    
-    db_conn.commit()
+    return {row["content_hash"] for row in rows}
 
 
 def batch_chunks(chunks: List[Dict[str, Any]], batch_size: int = 32) -> List[List[Dict[str, Any]]]:
@@ -134,22 +114,32 @@ def extract_texts_from_chunks(chunks: List[Dict[str, Any]]) -> List[str]:
 def embed_chunks(chunks: List[Dict[str, Any]]) -> List[Dict[str, Any]]:
     # Load model
     model = load_embedding_model()
-    
-    # Initialize database connection
-    db_conn = initialize_vector_db()
-    
-    # Filter out already embedded chunks
+
+    # Bulk-check LanceDB for hashes already indexed from a prior run.
+    incoming_hashes = [c.get('content_hash', '') for c in chunks if c.get('content_hash')]
+    existing_hashes = get_existing_hashes(incoming_hashes)
+
+    # Filter out already-indexed chunks, and dedup *within this call* too —
+    # the old sqlite version caught intra-batch duplicates by writing to
+    # its index as it went; a single bulk query up front doesn't, so track
+    # hashes seen in this batch explicitly.
     new_chunks = []
+    seen_this_call: Set[str] = set()
     skipped_count = 0
-    
+
     print(f"Processing {len(chunks)} chunks...")
-    
+
     for chunk in chunks:
-        if check_deduplication(chunk, db_conn):
-            new_chunks.append(chunk)
-        else:
+        content_hash = chunk.get('content_hash', '')
+        if not content_hash:
+            new_chunks.append(chunk)  # no hash -> treat as new, same as before
+            continue
+        if content_hash in existing_hashes or content_hash in seen_this_call:
             skipped_count += 1
-    
+            continue
+        seen_this_call.add(content_hash)
+        new_chunks.append(chunk)
+
     print(f"Skipped {skipped_count} already-embedded chunks.")
     
     # If no new chunks, return empty list
@@ -178,16 +168,12 @@ def embed_chunks(chunks: List[Dict[str, Any]]) -> List[Dict[str, Any]]:
             chunk['embedding'] = embedding.tolist()  # Convert numpy array to list
             embedded_chunks.append(chunk)
             processed_in_current_batch += 1
-            
-            # Add to deduplication index
-            add_to_deduplication_index(chunk, db_conn)
-    
+            # No separate index write — VectorStore().run() downstream is
+            # the single write path that makes this hash "known" next time.
+
     print(f"Completed processing. Embedded {processed_in_current_batch} chunks.")
     print(f"Total skipped: {skipped_count}")
-    
-    # Close database connection
-    db_conn.close()
-    
+
     return embedded_chunks
 
 

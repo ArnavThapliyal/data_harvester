@@ -9,7 +9,6 @@
 │   ├── pipeline_execution_trace.txt
 │   ├── pipeline_implementation_guide.md
 │   └── startup_validation_report.txt
-├── PROJECT_STATE.md
 ├── README.md
 ├── config
 │   ├── __init__.py
@@ -21,7 +20,6 @@
 │       ├── ind_NiftyMidSmallcap4005050_list.csv
 │       ├── ind_niftymidcapselect_list (1).csv
 │       └── ind_niftysmallcap50list.csv
-├── files
 ├── main.py
 ├── pipeline
 │   ├── Retrieval
@@ -38,8 +36,7 @@
 │   │   │   ├── screener_collector.py
 │   │   │   └── yfinance_collector.py
 │   │   ├── __init__.py
-│   │   ├── registry.py
-│   │   └── transcript_collector.py
+│   │   └── registry.py
 │   ├── __init__.py
 │   ├── chunker.py
 │   ├── cleaner.py
@@ -82,4 +79,4 @@
 │   └── test_yfinance_api_.py
 └── uv.lock
 
-12 directories, 71 files
+11 directories, 69 files

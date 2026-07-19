@@ -19,8 +19,9 @@ off the chunk dict.
 import hashlib
 import json
 import logging
+import re
 from pathlib import Path
-from typing import Any, Dict, List
+from typing import Any, Dict, List, Tuple
 
 from langchain_text_splitters import MarkdownHeaderTextSplitter, RecursiveCharacterTextSplitter
 
@@ -33,6 +34,9 @@ HEADERS_TO_SPLIT_ON = [
     ("###", "h3"),
     ("####", "h4"),
 ]
+
+# Must match the sentinel format cleaner.py's render_blocks_to_text() emits.
+PAGE_MARKER_RE = re.compile(r"\[\[PAGE:(\d+)\]\]")
 
 
 class Chunker:
@@ -58,6 +62,25 @@ class Chunker:
         # Create a hash of the content to make it unique
         content_hash = hashlib.md5(content.encode()).hexdigest()[:6]
         return f"{content_hash}_{chunk_index}"
+
+    @staticmethod
+    def _extract_page_range(text: str) -> Tuple[str, str]:
+        """
+        Pull [[PAGE:n]] sentinels out of a sub-chunk, return (clean_text, page_range).
+
+        A sub-chunk can straddle a page boundary (chunk_size doesn't respect
+        page edges), so page_range is "n" for a single page or "lo-hi" when
+        the chunk spans several. Falls back to "unknown" only if no markers
+        survived — e.g. parser never supplied page_number upstream.
+        """
+        pages = [int(p) for p in PAGE_MARKER_RE.findall(text)]
+        clean = PAGE_MARKER_RE.sub("", text)
+        clean = re.sub(r"\n{3,}", "\n\n", clean).strip()
+
+        if not pages:
+            return clean, "unknown"
+        lo, hi = min(pages), max(pages)
+        return clean, (str(lo) if lo == hi else f"{lo}-{hi}")
 
     def run(self, symbol: str) -> Dict[str, Any]:
         input_dir = CLEANED_DOCUMENTS / symbol
@@ -124,13 +147,20 @@ class Chunker:
             sub_chunks = self._char_splitter.split_text(section.page_content)
             
             for sub_content in sub_chunks:
+                clean_content, page_range = self._extract_page_range(sub_content)
+                if not clean_content:
+                    # sub-chunk was markers only (rare, e.g. a lone page
+                    # break landed on a split boundary) — nothing to embed
+                    continue
+
                 # Generate our unique, collision-proof chunk_id
-                unique_chunk_id = self._generate_chunk_id(sub_content, chunk_idx)
-                
+                unique_chunk_id = self._generate_chunk_id(clean_content, chunk_idx)
+
                 chunk_dict = {
                     "chunk_id": unique_chunk_id,  # <-- Using our verified unique ID variable here
-                    "content": sub_content,
+                    "content": clean_content,
                     "section_path": breadcrumb,
+                    "page_range": page_range,
                 }
                 chunks.append(chunk_dict)
                 chunk_idx += 1

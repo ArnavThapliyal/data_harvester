@@ -35,6 +35,8 @@ class CompanyDocument(LanceModel):
     doc_type: str
     section_path: str
     source_filename: str
+    # --- NEW: Store raw metadata as a JSON string to prevent dropping fields ---
+    metadata_json: str 
 
 
 class VectorStore: 
@@ -97,12 +99,13 @@ class VectorStore:
                     'page_range': page_range,
                     'symbol': symbol,
                     'timestamp': chunk.get('timestamp', ''),
-                    
-                    # --- NEW REQUIRED FIELDS ---
                     'content_hash': chunk.get('content_hash', ''),
                     'doc_type': metadata.get('doc_type', 'unknown'),
                     'section_path': metadata.get('section_path', ''),
-                    'source_filename': metadata.get('source_filename', '')
+                    'source_filename': metadata.get('source_filename', ''),
+                    
+                    # --- NEW: Serialize the entire metadata dict to JSON ---
+                    'metadata_json': json.dumps(metadata)
                 }
                 
                 processed_chunks.append(processed_chunk)
@@ -154,6 +157,15 @@ class VectorStore:
             # Convert results to proper format
             formatted_results = []
             for result in results:
+                # --- NEW: Deserialize the metadata back into a dictionary ---
+                metadata_dict = {}
+                raw_meta = result.get('metadata_json', '{}')
+                if raw_meta:
+                    try:
+                        metadata_dict = json.loads(raw_meta)
+                    except json.JSONDecodeError:
+                        pass
+                
                 # Extract the content and other metadata
                 chunk_data = {
                     'chunk_id': result.get('chunk_id', ''),
@@ -162,6 +174,10 @@ class VectorStore:
                     'page_range': result.get('page_range', ''),
                     'symbol': result.get('symbol', ''),
                     'timestamp': result.get('timestamp', ''),
+                    'doc_type': result.get('doc_type', ''),
+                    'section_path': result.get('section_path', ''),
+                    'source_filename': result.get('source_filename', ''),
+                    'metadata': metadata_dict
                 }
                 formatted_results.append(chunk_data)
             
@@ -180,7 +196,14 @@ class VectorStore:
             # Perform exact match search
             results = table.search().where(f"chunk_id = '{chunk_id}'").limit(1).to_list()            
             if results:
-                return results[0]
+                # Deserialize metadata_json for direct ID lookups too
+                result = results[0]
+                if 'metadata_json' in result:
+                    try:
+                        result['metadata'] = json.loads(result.pop('metadata_json'))
+                    except Exception:
+                        result['metadata'] = {}
+                return result
             return None
             
         except Exception as e:
@@ -193,8 +216,16 @@ class VectorStore:
             table = db.open_table(self.table_name)
             
             # Filter by symbol
-            results = table.search().where(where=f"symbol = '{symbol}'").to_list()
+            results = table.search().where(f"symbol = '{symbol}'").to_list()
             
+            # Fix metadata format for all returned results
+            for result in results:
+                if 'metadata_json' in result:
+                    try:
+                        result['metadata'] = json.loads(result.pop('metadata_json'))
+                    except Exception:
+                        result['metadata'] = {}
+                        
             return results
             
         except Exception as e:
@@ -219,4 +250,3 @@ class VectorStore:
         except Exception as e:
             logger.error(f"Failed to get metadata for symbol {symbol}: {e}", exc_info=True)
             return {"symbol": symbol, "total_chunks": 0, "error": str(e)}
-

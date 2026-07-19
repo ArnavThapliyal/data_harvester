@@ -144,11 +144,28 @@ class Cleaner:
             f.write(text)
 
     def render_blocks_to_text(self, blocks: List[Dict[str, Any]]) -> str:
+        """
+        Flattens IR blocks to a single Markdown-ish string for chunker.py.
+
+        Page boundaries used to be lost here — blocks carry `page_number`
+        (see _group_by_page) but the joined string is just prose, nothing
+        chunker.py could recover a page from. Now every page transition
+        emits a `[[PAGE:n]]` sentinel line ahead of that page's content.
+        chunker.py extracts these to compute each chunk's page_range and
+        strips them out before content is stored — see PAGE_MARKER_RE
+        there. Keep the sentinel format in sync between the two files.
+        """
         lines = []
+        last_page = None
         for block in blocks:
             content = block.get('content', '')
             if not (isinstance(content, str) and content.strip()):
                 continue
+
+            page_num = block.get('page_number', 1)
+            if page_num != last_page:
+                lines.append(f"[[PAGE:{page_num}]]")
+                last_page = page_num
 
             block_type = block.get('type', 'paragraph')
             stripped = content.strip()
