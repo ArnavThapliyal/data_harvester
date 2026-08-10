@@ -35,6 +35,17 @@ OTHER_EXTENSIONS = {
     ".mp3", ".mp4", ".avi", ".mov", ".wav"
 }
 
+# Domain-specific rate limiting settings (in seconds)
+DOMAIN_RATE_LIMITS = {
+    'nseindia.com': 2.5,
+    'bseindia.com': 2.5,
+    'screener.in': 1.5
+}
+
+# Global state for domain rate limiting
+_domain_locks: Dict[str, asyncio.Lock] = {}
+_last_accessed: Dict[str, float] = {}
+
 def get_file_extension(url: str) -> str:
     """Extract file extension from URL."""
     parsed_url = urlparse(url)
@@ -147,31 +158,36 @@ def create_manifest(symbol: str, source_urls: List[str], crawler_used: str,
         "status": "completed"
     }
 
-def run(symbol: str) -> dict:
-    """Sync entry point for pipeline.py — wraps the async implementation."""
-    return asyncio.run(_run_async(symbol))
-
-async def _run_async(symbol: str) -> dict:
-    try:
-        with open(COMPANY_URLS_JSON, 'r') as f:
-            company_urls = json.load(f)
-    except Exception as e:
-        logger.error(f"[DocumentCrawler] [{symbol}] failed to load company_urls.json: {e}")
-        return {"status": "failed"}
-
-    entry = company_urls.get(symbol)
-    if not entry:
-        logger.warning(f"[DocumentCrawler] [{symbol}] no entry in company_urls.json")
-        return {"status": "no_data"}
-
-    urls = entry.get("all_urls", [])
-    if not urls:
-        logger.warning(f"[DocumentCrawler] [{symbol}] all_urls is empty")
-        return {"status": "no_data"}
-
-    return await process_single_company(symbol, urls)
+async def _throttle_by_domain(url: str, symbol: str) -> None:
+    """Apply domain-specific rate limiting."""
+    parsed_url = urlparse(url)
+    domain = parsed_url.netloc.lower()
+    
+    # Get or create lock for this domain
+    if domain not in _domain_locks:
+        _domain_locks[domain] = asyncio.Lock()
+    
+    # Get or create last accessed timestamp for this domain
+    if domain not in _last_accessed:
+        _last_accessed[domain] = 0
+    
+    # Acquire domain lock
+    async with _domain_locks[domain]:
+        # Calculate how long we need to wait
+        last_access = _last_accessed[domain]
+        rate_limit = DOMAIN_RATE_LIMITS.get(domain, 1.0)
+        elapsed = time.time() - last_access
+        wait_time = max(0, rate_limit - elapsed)
+        
+        if wait_time > 0:
+            logger.debug(f"[DocumentCrawler] [{symbol}] throttling {domain} for {wait_time:.2f}s")
+            await asyncio.sleep(wait_time)
+        
+        # Update last accessed timestamp
+        _last_accessed[domain] = time.time()
 
 async def process_single_company(symbol: str, urls: List[str], overwrite: bool = False) -> dict:
+    """Process a single company asynchronously with domain throttling."""
     manifest_path = RAW_DOCUMENTS / symbol / "manifest.json"
 
     if not overwrite and manifest_path.exists():
@@ -183,17 +199,28 @@ async def process_single_company(symbol: str, urls: List[str], overwrite: bool =
 
     all_downloaded = []  # list of dicts from download_file()
 
-    browser_config = BrowserConfig(headless=True)
+    # Configure browser with memory optimizations
+    browser_config = BrowserConfig(
+        headless=True,
+        text_mode=True,  # This automatically disables image loading and heavy asset rendering
+        extra_args=["--disable-gpu", "--disable-extensions", "--disable-dev-shm-usage", "--no-sandbox"]
+    )
+    
     run_config = CrawlerRunConfig(
         cache_mode=CacheMode.BYPASS,
         page_timeout=30000,
-        delay_before_return_html=2.0,   # lets NSE JS tables populate
+        delay_before_return_html=2.0,
+        exclude_external_links=True,
+        word_count_threshold=10
     )
 
     async with AsyncWebCrawler(config=browser_config) as crawler:
         for url in urls:
             logger.info(f"[DocumentCrawler] [{symbol}] fetching seed URL: {url}")
 
+            # Apply domain throttling before crawling
+            await _throttle_by_domain(url, symbol)
+            
             try:
                 result = await crawler.arun(url=url, config=run_config)
             except Exception as e:
@@ -214,20 +241,10 @@ async def process_single_company(symbol: str, urls: List[str], overwrite: bool =
             logger.info(f"[DocumentCrawler] [{symbol}] {len(hrefs)} links found on {url}")
 
             for href in hrefs:
-                # Apply per-domain pacing before downloading
+                # Apply domain throttling before downloading
                 href = urljoin(url, href)
-                parsed_url = urlparse(href)
-                domain = parsed_url.netloc.lower()
+                await _throttle_by_domain(href, symbol)
                 
-                if 'nseindia.com' in domain:
-                    await asyncio.sleep(2.0)
-                elif 'bseindia.com' in domain:
-                    await asyncio.sleep(1.5)
-                elif 'screener.in' in domain:
-                    await asyncio.sleep(1.0)
-                else:
-                    await asyncio.sleep(1.0)
-                    
                 doc_type, dest_dir = determine_download_destination(href, symbol)
                 if doc_type == "skip":
                     continue
@@ -252,7 +269,6 @@ async def process_single_company(symbol: str, urls: List[str], overwrite: bool =
                     logger.info(f"[DocumentCrawler] [{symbol}] downloaded: {filename}")
                 else:
                     logger.warning(f"[DocumentCrawler] [{symbol}] failed to download {href}: {error}")
-
             await asyncio.sleep(0.5)   # courteous delay between seed URLs
 
     # Derive status
@@ -277,6 +293,60 @@ async def process_single_company(symbol: str, urls: List[str], overwrite: bool =
     files_ok = sum(1 for f in all_downloaded if f["success"])
     logger.info(f"[DocumentCrawler] [{symbol}] done — status={status}, downloaded={files_ok}/{len(all_downloaded)}")
     return {"status": status, "files_downloaded": files_ok}
+
+async def process_batch_companies(symbols: List[str], overwrite: bool = False) -> Dict[str, Any]:
+    """Process multiple companies concurrently with semaphore control."""
+    # Create semaphore to limit concurrent tasks (10-12 is optimal for 16GB M5)
+    semaphore = asyncio.Semaphore(12)
+    
+    async def process_with_semaphore(symbol: str) -> Dict[str, Any]:
+        async with semaphore:
+            return await process_single_company(symbol, [], overwrite)
+    
+    # Create tasks for all symbols
+    tasks = [process_with_semaphore(symbol) for symbol in symbols]
+    
+    # Execute all tasks concurrently
+    results = await asyncio.gather(*tasks, return_exceptions=True)
+    
+    # Process results and handle any exceptions
+    processed_results = {}
+    for symbol, result in zip(symbols, results):
+        if isinstance(result, Exception):
+            logger.error(f"[DocumentCrawler] [{symbol}] failed with exception: {result}")
+            processed_results[symbol] = {"status": "failed", "error": str(result)}
+        else:
+            processed_results[symbol] = result
+    
+    return processed_results
+
+def run(symbol: str) -> dict:
+    """Sync entry point for pipeline.py — wraps the async implementation."""
+    return asyncio.run(_run_async(symbol))
+
+async def _run_async(symbol: str) -> dict:
+    try:
+        with open(COMPANY_URLS_JSON, 'r') as f:
+            company_urls = json.load(f)
+    except Exception as e:
+        logger.error(f"[DocumentCrawler] [{symbol}] failed to load company_urls.json: {e}")
+        return {"status": "failed"}
+
+    entry = company_urls.get(symbol)
+    if not entry:
+        logger.warning(f"[DocumentCrawler] [{symbol}] no entry in company_urls.json")
+        return {"status": "no_data"}
+
+    urls = entry.get("all_urls", [])
+    if not urls:
+        logger.warning(f"[DocumentCrawler] [{symbol}] all_urls is empty")
+        return {"status": "no_data"}
+
+    return await process_single_company(symbol, urls)
+
+def run_batch(symbols: List[str], overwrite: bool = False) -> Dict[str, Any]:
+    """Run batch processing for multiple symbols."""
+    return asyncio.run(process_batch_companies(symbols, overwrite))
 
 def main():
     """Main entry point for document crawler."""
@@ -303,11 +373,28 @@ def main():
     if args.limit:
         company_urls = dict(list(company_urls.items())[:args.limit])
         
-    # Fix 1: schema bug — extract all_urls from the nested object
-    for symbol, entry in company_urls.items():
-        urls = entry.get("all_urls", [])          # NOT entry itself
-        logger.info(f"Starting processing for symbol: {symbol}")
-        asyncio.run(process_single_company(symbol, urls, overwrite=args.overwrite))  # Fix 2: await the async fn
+    # Process all symbols concurrently
+    symbols_list = list(company_urls.keys())
+    logger.info(f"Starting batch processing for {len(symbols_list)} symbols")
+    
+    results = run_batch(symbols_list, overwrite=args.overwrite)
+    
+    # Log results
+    succeeded = 0
+    failed = 0
+    skipped = 0
+    
+    for symbol, result in results.items():
+        status = result.get("status", "unknown")
+        if status == "success":
+            succeeded += 1
+        elif status == "failed":
+            failed += 1
+        elif status == "skipped":
+            skipped += 1
+    
+    logger.info(f"Batch processing complete: {succeeded} succeeded, {failed} failed, {skipped} skipped")
 
 if __name__ == "__main__":
+    main()
     main()
